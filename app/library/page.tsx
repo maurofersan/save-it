@@ -8,6 +8,7 @@ import { AppShell } from "@/components/nav/AppShell";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Badge";
 import { RatingStars } from "@/components/library/RatingStars";
+import { Select } from "@/components/ui/Select";
 
 export const metadata = {
   title: "Biblioteca · SAVE IT",
@@ -24,7 +25,9 @@ export default async function LibraryPage({
   const sp = await searchParams;
   const specialties = listSpecialties();
   const specialtyKey: SpecialtyKey | undefined =
-    sp.specialty === "QUALITY" || sp.specialty === "SAFETY" || sp.specialty === "PRODUCTION"
+    sp.specialty === "QUALITY" ||
+    sp.specialty === "SAFETY" ||
+    sp.specialty === "PRODUCTION"
       ? (sp.specialty as SpecialtyKey)
       : undefined;
   const lessons = await searchLibrary({
@@ -56,7 +59,7 @@ export default async function LibraryPage({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-slate-200">Especialidad</span>
+              {/* <span className="text-sm text-slate-200">Especialidad</span>
               <select
                 name="specialty"
                 defaultValue={sp.specialty ?? ""}
@@ -68,7 +71,19 @@ export default async function LibraryPage({
                     {s.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
+              <Select
+                name="specialty"
+                label="Especialidad"
+                defaultValue={sp.specialty ?? ""}
+              >
+                <option value="">Todas</option>
+                {specialties.map((s) => (
+                  <option key={s.id} value={s.key}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
             </label>
             <button className="h-11 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700">
               Buscar
@@ -101,7 +116,9 @@ export default async function LibraryPage({
                   initialCount={l.ratingCount}
                 />
               </div>
-              <div className="line-clamp-3 text-sm text-slate-300">{l.description}</div>
+              <div className="line-clamp-3 text-sm text-slate-300">
+                {l.description}
+              </div>
               <div className="flex items-center justify-end">
                 <Link
                   href={`/library/${l.id}`}
@@ -126,4 +143,3 @@ export default async function LibraryPage({
     </AppShell>
   );
 }
-

@@ -21,8 +21,17 @@
 }
 
 body {
-  background: radial-gradient(1200px 800px at 20% 10%, rgba(37, 99, 235, 0.22), transparent 55%),
-    radial-gradient(900px 700px at 90% 40%, rgba(59, 130, 246, 0.12), transparent 55%),
+  background:
+    radial-gradient(
+      1200px 800px at 20% 10%,
+      rgba(37, 99, 235, 0.22),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 700px at 90% 40%,
+      rgba(59, 130, 246, 0.12),
+      transparent 55%
+    ),
     var(--background);
   color: var(--foreground);
 }
@@ -30,12 +39,18 @@ body {
 /* BEM-ish component blocks (used for small custom styling/animations) */
 .c-card {
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  backdrop-filter: blur(10px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.02)
+  );
 }
 
 .c-button {
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 .c-button:active {
   transform: translateY(1px);
@@ -53,7 +68,7 @@ body {
   background: linear-gradient(
     90deg,
     rgba(148, 163, 184, 0.12),
-    rgba(148, 163, 184, 0.20),
+    rgba(148, 163, 184, 0.2),
     rgba(148, 163, 184, 0.12)
   );
   background-size: 200% 100%;
