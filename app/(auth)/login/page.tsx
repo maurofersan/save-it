@@ -4,7 +4,12 @@ export const metadata = {
   title: "Login · SAVE IT",
 };
 
-export default function LoginPage() {
-  return <LoginForm />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const sp = await searchParams;
+  return <LoginForm next={sp.next} />;
 }
 

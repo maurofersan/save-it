@@ -11,7 +11,7 @@ import type { User } from "@/types/models";
 
 type State = ActionResult<User> | null;
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<State, FormData>(
     loginAction,
     null,
@@ -30,6 +30,7 @@ export function LoginForm() {
       </CardHeader>
       <CardBody>
         <form action={action} className="flex flex-col gap-4">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <Input
             name="email"
             type="email"

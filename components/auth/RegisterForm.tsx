@@ -12,7 +12,7 @@ import type { User } from "@/types/models";
 
 type State = ActionResult<User> | null;
 
-export function RegisterForm() {
+export function RegisterForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<State, FormData>(
     registerAction,
     null,
@@ -31,6 +31,7 @@ export function RegisterForm() {
       </CardHeader>
       <CardBody>
         <form action={action} className="flex flex-col gap-4">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <Input
             name="name"
             label="Nombre"

@@ -35,6 +35,16 @@ function expiresAtIso(days: number) {
   return d.toISOString();
 }
 
+/** Same-origin path only; blocks protocol-relative and absolute URLs in `next`. */
+function safeRedirectPath(raw: unknown, fallback = "/dashboard"): string {
+  if (typeof raw !== "string") return fallback;
+  const s = raw.trim();
+  if (!s.startsWith("/") || s.startsWith("//")) return fallback;
+  if (s.includes("\\") || /[\r\n\0]/.test(s)) return fallback;
+  if (s.length > 256) return fallback;
+  return s;
+}
+
 function setSessionCookie(token: string) {
   const expiresAt = new Date(expiresAtIso(SESSION_DAYS));
   return cookies().then((store) => {
@@ -88,7 +98,7 @@ export async function registerAction(
   createSession({ userId: user.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
   await setSessionCookie(token);
 
-  return { ok: true, data: user };
+  redirect(safeRedirectPath(formData.get("next")));
 }
 
 export async function loginAction(
@@ -124,7 +134,7 @@ export async function loginAction(
   createSession({ userId: userAuth.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
   await setSessionCookie(token);
 
-  return { ok: true, data: userAuth };
+  redirect(safeRedirectPath(formData.get("next")));
 }
 
 export async function logoutAction(): Promise<void> {
