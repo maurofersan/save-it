@@ -47,6 +47,7 @@ export function LoginForm({ next }: { next?: string }) {
             label="Contraseña"
             placeholder="••••••••"
             error={fieldErrors?.password}
+            showPasswordToggle
             required
           />
 

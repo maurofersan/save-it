@@ -59,6 +59,7 @@ export function RegisterForm({ next }: { next?: string }) {
             label="Contraseña"
             placeholder="Mínimo 8 caracteres"
             error={fieldErrors?.password}
+            showPasswordToggle
             required
           />
 
