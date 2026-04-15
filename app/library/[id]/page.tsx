@@ -71,6 +71,11 @@ export default async function LibraryDetailPage({
             <Section title="Causa raíz">{lesson.rootCause}</Section>
             <Section title="Solución">{lesson.solution}</Section>
             <div className="grid gap-3 sm:grid-cols-2">
+              <Section title="Fecha de suceso">
+                {lesson.eventDate
+                  ? new Date(lesson.eventDate).toLocaleDateString()
+                  : "—"}
+              </Section>
               <Section title="Impacto">
                 {lesson.impactType === "TIME" ? "Tiempo" : "Costo"} ·{" "}
                 {lesson.impactValue}

@@ -1,0 +1,12 @@
+.lessonCreateForm__row {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .lessonCreateForm__row--two {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+}
+

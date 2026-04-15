@@ -40,6 +40,7 @@ export type Lesson = {
   description: string;
   rootCause: string;
   solution: string;
+  eventDate: string | null;
   impactType: ImpactType;
   impactValue: number;
   status: LessonStatus;

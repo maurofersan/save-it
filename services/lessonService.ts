@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import type { LessonStatus } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty } from "@/types/models";
 
@@ -9,6 +10,7 @@ type LessonRow = {
   description: string;
   root_cause: string;
   solution: string;
+  event_date: string | null;
   impact_type: Lesson["impactType"];
   impact_value: number;
   status: LessonStatus;
@@ -30,6 +32,7 @@ function mapLesson(row: LessonRow): Lesson {
     description: row.description,
     rootCause: row.root_cause,
     solution: row.solution,
+    eventDate: row.event_date,
     impactType: row.impact_type,
     impactValue: row.impact_value,
     status: row.status,
@@ -50,6 +53,7 @@ export function createLesson(input: {
   description: string;
   rootCause: string;
   solution: string;
+  eventDate: string | null;
   impactType: Lesson["impactType"];
   impactValue: number;
   createdBy: number;
@@ -60,9 +64,9 @@ export function createLesson(input: {
       `
       INSERT INTO lessons (
         title, specialty_id, description, root_cause, solution,
-        impact_type, impact_value, status, created_by
+        event_date, impact_type, impact_value, status, created_by
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'RECEIVED', ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'RECEIVED', ?)
     `,
     )
     .run(
@@ -71,6 +75,7 @@ export function createLesson(input: {
       input.description,
       input.rootCause,
       input.solution,
+      input.eventDate,
       input.impactType,
       input.impactValue,
       input.createdBy,
@@ -87,7 +92,7 @@ export function getLessonById(id: number): Lesson | null {
     .prepare(
       `
       SELECT id, title, specialty_id, description, root_cause, solution,
-             impact_type, impact_value, status, reviewer_comment, created_by,
+             event_date, impact_type, impact_value, status, reviewer_comment, created_by,
              created_at, updated_at, validated_at, views_count, rating_count, rating_avg
       FROM lessons
       WHERE id = ?
@@ -109,6 +114,7 @@ export function getValidatedLessonWithSpecialtyById(id: number): LessonWithSpeci
         l.description,
         l.root_cause,
         l.solution,
+        l.event_date,
         l.impact_type,
         l.impact_value,
         l.status,
@@ -143,7 +149,7 @@ export function getValidatedLessonWithSpecialtyById(id: number): LessonWithSpeci
   return {
     ...mapLesson(row),
     specialtyKey: row.specialty_key,
-    specialtyName: row.specialty_name,
+    specialtyName: getSpecialtyLabel(row.specialty_key),
     createdByName: row.created_by_name,
     createdByEmail: row.created_by_email,
   };
@@ -257,6 +263,7 @@ export function listLessonsForValidation(filters: {
         l.description,
         l.root_cause,
         l.solution,
+        l.event_date,
         l.impact_type,
         l.impact_value,
         l.status,
@@ -291,7 +298,7 @@ export function listLessonsForValidation(filters: {
   return rows.map((r) => ({
     ...mapLesson(r),
     specialtyKey: r.specialty_key,
-    specialtyName: r.specialty_name,
+    specialtyName: getSpecialtyLabel(r.specialty_key),
     createdByName: r.created_by_name,
     createdByEmail: r.created_by_email,
   }));
@@ -326,6 +333,7 @@ export function searchValidatedLessons(filters: {
         l.description,
         l.root_cause,
         l.solution,
+        l.event_date,
         l.impact_type,
         l.impact_value,
         l.status,
@@ -361,7 +369,7 @@ export function searchValidatedLessons(filters: {
   return rows.map((r) => ({
     ...mapLesson(r),
     specialtyKey: r.specialty_key,
-    specialtyName: r.specialty_name,
+    specialtyName: getSpecialtyLabel(r.specialty_key),
     createdByName: r.created_by_name,
     createdByEmail: r.created_by_email,
   }));

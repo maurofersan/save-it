@@ -46,6 +46,7 @@ function run() {
       description TEXT NOT NULL,
       root_cause TEXT NOT NULL,
       solution TEXT NOT NULL,
+      event_date TEXT,
       impact_type TEXT NOT NULL CHECK (impact_type IN ('TIME', 'COST')),
       impact_value REAL NOT NULL DEFAULT 0,
       status TEXT NOT NULL CHECK (status IN ('RECEIVED', 'IN_PROGRESS', 'VALIDATED', 'DISCARDED')) DEFAULT 'RECEIVED',
@@ -87,11 +88,11 @@ function run() {
   `);
 
   const insertSpecialty = db.prepare(
-    "INSERT OR IGNORE INTO specialties (key, name) VALUES (?, ?)",
+    "INSERT INTO specialties (key, name) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET name = excluded.name",
   );
-  insertSpecialty.run("QUALITY", "Quality");
-  insertSpecialty.run("SAFETY", "Safety");
-  insertSpecialty.run("PRODUCTION", "Production");
+  insertSpecialty.run("QUALITY", "Calidad");
+  insertSpecialty.run("SAFETY", "Seguridad");
+  insertSpecialty.run("PRODUCTION", "Producción");
 
   // Convenience seed: create one resident if not exists
   // Email: resident@saveit.local  Password: Resident123!

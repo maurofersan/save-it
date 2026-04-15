@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { createLessonAction } from "@/actions/lessons";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { DateInput } from "@/components/ui/DateInput";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ActionResult } from "@/types/actions";
 import type { Specialty } from "@/types/models";
+import styles from "./LessonCreateForm.module.css";
 
 type State = ActionResult<{ lessonId: number }> | null;
 
@@ -70,15 +72,28 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
             </Select>
           </div>
 
-          <Input
-            name="impactValue"
-            label="Valor del impacto"
-            type="number"
-            step="0.01"
-            placeholder="0"
-            error={fieldErrors?.impactValue}
-            required
-          />
+          <div
+            className={[
+              styles.lessonCreateForm__row,
+              styles["lessonCreateForm__row--two"],
+            ].join(" ")}
+          >
+            <Input
+              name="impactValue"
+              label="Valor del impacto"
+              type="number"
+              step="0.01"
+              placeholder="0"
+              error={fieldErrors?.impactValue}
+              required
+            />
+            <DateInput
+              name="eventDate"
+              label="Fecha de suceso"
+              error={(fieldErrors as Record<string, string> | undefined)?.eventDate}
+              required
+            />
+          </div>
 
           <Textarea
             name="description"

@@ -25,6 +25,11 @@ const createLessonSchema = z.object({
   description: z.string().trim().min(10, "Descripción muy corta").max(4000),
   rootCause: z.string().trim().min(5, "Causa raíz muy corta").max(2000),
   solution: z.string().trim().min(5, "Solución muy corta").max(2000),
+  eventDate: z
+    .string()
+    .trim()
+    .min(1, "Fecha de suceso requerida")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
   impactType: z.enum(["TIME", "COST"]),
   impactValue: z.coerce.number().min(0).max(1_000_000),
 });
@@ -50,6 +55,7 @@ export async function createLessonAction(
     description: String(formData.get("description") ?? ""),
     rootCause: String(formData.get("rootCause") ?? ""),
     solution: String(formData.get("solution") ?? ""),
+    eventDate: String(formData.get("eventDate") ?? ""),
     impactType: String(formData.get("impactType") ?? ""),
     impactValue: formData.get("impactValue") ?? 0,
   };
@@ -77,6 +83,7 @@ export async function createLessonAction(
     description: parsed.data.description,
     rootCause: parsed.data.rootCause,
     solution: parsed.data.solution,
+    eventDate: parsed.data.eventDate,
     impactType: parsed.data.impactType as Lesson["impactType"],
     impactValue: parsed.data.impactValue,
     createdBy: user.id,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { logoutAction } from "@/actions/auth";
 import { getCurrentUser } from "@/lib/auth";
+import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import { getDashboardMetrics } from "@/services/metricsService";
 import { AppShell } from "@/components/nav/AppShell";
 import { Button } from "@/components/ui/Button";
@@ -103,7 +104,9 @@ export default async function DashboardPage() {
                   key={s.specialtyKey}
                   className="rounded-2xl border border-white/10 bg-white/5 p-4"
                 >
-                  <div className="text-xs text-slate-400">{s.specialtyKey}</div>
+                  <div className="text-xs text-slate-400">
+                    {getSpecialtyLabel(s.specialtyKey)}
+                  </div>
                   <div className="mt-1 text-xl font-semibold text-slate-50">{s.count}</div>
                   <div className="mt-3 h-2 w-full rounded-full bg-white/5">
                     <div
