@@ -31,7 +31,10 @@ export default async function LibraryDetailPage({
     <AppShell activePath="/library">
       <div className="grid gap-4 lg:gap-6">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/library" className="text-sm font-medium text-blue-200 hover:underline">
+          <Link
+            href="/library"
+            className="text-sm font-medium text-blue-200 hover:underline"
+          >
             ← Volver a biblioteca
           </Link>
           <ViewCounter lessonId={lessonId} initialViews={lesson.viewsCount} />
@@ -49,7 +52,11 @@ export default async function LibraryDetailPage({
                   <span>·</span>
                   <span>Autor: {lesson.createdByName}</span>
                   <span>·</span>
-                  <span>{new Date(lesson.validatedAt ?? lesson.createdAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(
+                      lesson.validatedAt ?? lesson.createdAt,
+                    ).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
               <RatingStars
@@ -65,10 +72,12 @@ export default async function LibraryDetailPage({
             <Section title="Solución">{lesson.solution}</Section>
             <div className="grid gap-3 sm:grid-cols-2">
               <Section title="Impacto">
-                {lesson.impactType === "TIME" ? "Tiempo" : "Costo"} · {lesson.impactValue}
+                {lesson.impactType === "TIME" ? "Tiempo" : "Costo"} ·{" "}
+                {lesson.impactValue}
               </Section>
               <Section title="Métricas">
-                {lesson.viewsCount} vistas · {(lesson.ratingAvg || 0).toFixed(1)} / 5
+                {lesson.viewsCount} vistas ·{" "}
+                {(lesson.ratingAvg || 0).toFixed(1)} / 5
               </Section>
             </div>
           </CardBody>
@@ -76,7 +85,9 @@ export default async function LibraryDetailPage({
 
         <Card>
           <CardHeader>
-            <div className="text-sm font-semibold text-slate-100">Evidencias</div>
+            <div className="text-sm font-semibold text-slate-100">
+              Evidencias
+            </div>
             <div className="mt-1 text-sm text-slate-400">
               Fotos adjuntas a la lección.
             </div>
@@ -113,7 +124,13 @@ export default async function LibraryDetailPage({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <div className="text-xs font-semibold text-slate-200">{title}</div>
@@ -121,4 +138,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-
