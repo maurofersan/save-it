@@ -1,12 +1,9 @@
 "use server";
 
-import fs from "node:fs/promises";
-import path from "node:path";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { uploadsDir } from "@/lib/paths";
 import { addEvidence } from "@/services/evidenceService";
 import {
   createLesson,
@@ -20,6 +17,7 @@ import { listSpecialties } from "@/services/specialtyService";
 import type { ActionResult } from "@/types/actions";
 import type { LessonStatus, SpecialtyKey } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty, Specialty } from "@/types/models";
+import { uploadImage } from "@/lib/cloudinary";
 
 const createLessonSchema = z.object({
   title: z.string().trim().min(5, "Título muy corto").max(140),
@@ -31,7 +29,9 @@ const createLessonSchema = z.object({
   impactValue: z.coerce.number().min(0).max(1_000_000),
 });
 
-export async function getLessonFormData(): Promise<{ specialties: Specialty[] }> {
+export async function getLessonFormData(): Promise<{
+  specialties: Specialty[];
+}> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return { specialties: listSpecialties() };
@@ -58,7 +58,10 @@ export async function createLessonAction(
   if (!parsed.success) {
     return {
       ok: false,
-      error: { message: "Datos inválidos", fieldErrors: flattenZod(parsed.error) },
+      error: {
+        message: "Datos inválidos",
+        fieldErrors: flattenZod(parsed.error),
+      },
     };
   }
 
@@ -97,7 +100,8 @@ export async function setLessonStatusAction(
 ): Promise<ActionResult<Lesson>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
-  if (user.role !== "RESIDENT") return { ok: false, error: { message: "No autorizado" } };
+  if (user.role !== "RESIDENT")
+    return { ok: false, error: { message: "No autorizado" } };
 
   const lessonId = Number(formData.get("lessonId") ?? 0);
   const status = String(formData.get("status") ?? "") as LessonStatus;
@@ -140,7 +144,9 @@ export async function rateLesson(
   return { ok: true, data: agg };
 }
 
-export async function incrementViewsAction(lessonId: number): Promise<ActionResult<{ views: number }>> {
+export async function incrementViewsAction(
+  lessonId: number,
+): Promise<ActionResult<{ views: number }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
   const views = incrementLessonViews(lessonId);
@@ -166,7 +172,10 @@ export async function searchLibrary(input: {
   return searchValidatedLessons(input);
 }
 
-async function saveEvidenceImage(file: File, lessonId: number): Promise<string> {
+async function saveEvidenceImage(
+  file: File,
+  lessonId: number,
+): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("La evidencia debe ser una imagen");
   }
@@ -176,13 +185,16 @@ async function saveEvidenceImage(file: File, lessonId: number): Promise<string> 
 
   const ext = guessExtension(file.type) ?? "png";
   const baseName = `lesson-${lessonId}-${Date.now()}.${ext}`;
-  const abs = path.join(uploadsDir(), baseName);
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  await fs.mkdir(uploadsDir(), { recursive: true });
-  await fs.writeFile(abs, buf);
-
-  return `/uploads/${baseName}`;
+  try {
+    return await uploadImage(file, baseName);
+  } catch (error: unknown) {
+    const details =
+      error instanceof Error ? error.message : "Unknown upload error";
+    throw new Error(
+      `No se pudo subir la imagen. Intenta nuevamente más tarde. (${details})`,
+    );
+  }
 }
 
 function guessExtension(mime: string): string | null {
@@ -201,4 +213,3 @@ function flattenZod(err: z.ZodError): Record<string, string> {
   }
   return out;
 }
-
