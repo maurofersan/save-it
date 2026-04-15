@@ -6,6 +6,7 @@ import { createLessonAction } from "@/actions/lessons";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { DateInput } from "@/components/ui/DateInput";
+import { ImagePicker } from "@/components/ui/ImagePicker";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
@@ -117,16 +118,12 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
             required
           />
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-slate-200">Evidencia (imagen)</span>
-            <input
-              name="evidence"
-              type="file"
-              accept="image/*"
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700"
-            />
-            <span className="text-xs text-slate-400">Máx. 5MB · PNG/JPG/WEBP</span>
-          </label>
+          <ImagePicker
+            name="evidence"
+            label="Evidencia (imagen)"
+            accept="image/png, image/jpeg, image/webp"
+            hint="Máx. 5MB · PNG/JPG/WEBP"
+          />
 
           {state && !state.ok ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">

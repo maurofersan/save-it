@@ -1,0 +1,11 @@
+.dateInput {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  position: relative;
+}
+
+.dateInput__label {
+  font-size: 0.875rem;
+  color: rgb(226 232 240); /* slate-200 */
+}
