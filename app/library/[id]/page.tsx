@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { isValidObjectIdString } from "@/lib/objectId";
 import { listEvidenceForLesson } from "@/services/evidenceService";
 import { getValidatedLessonWithSpecialtyById } from "@/services/lessonService";
 import { AppShell } from "@/components/nav/AppShell";
@@ -19,13 +20,12 @@ export default async function LibraryDetailPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const lessonId = Number(id);
-  if (!lessonId) redirect("/library");
+  if (!isValidObjectIdString(id)) redirect("/library");
 
-  const lesson = getValidatedLessonWithSpecialtyById(lessonId);
+  const lesson = await getValidatedLessonWithSpecialtyById(id);
   if (!lesson) redirect("/library");
 
-  const evidence = listEvidenceForLesson(lessonId);
+  const evidence = await listEvidenceForLesson(id);
 
   return (
     <AppShell activePath="/library">
@@ -37,7 +37,7 @@ export default async function LibraryDetailPage({
           >
             ← Volver a biblioteca
           </Link>
-          <ViewCounter lessonId={lessonId} initialViews={lesson.viewsCount} />
+          <ViewCounter lessonId={id} initialViews={lesson.viewsCount} />
         </div>
 
         <Card>

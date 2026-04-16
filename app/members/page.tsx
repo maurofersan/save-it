@@ -13,7 +13,7 @@ export default async function MembersPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const members = listMembers();
+  const members = await listMembers();
 
   return (
     <AppShell activePath="/members">

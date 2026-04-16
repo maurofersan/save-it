@@ -6,78 +6,82 @@ Plataforma **SAVE IT** (manual en `Documento3.pdf`) para capturar, validar y reu
 
 - **Next.js** (App Router)
 - **TypeScript** (strict)
-- **Better‑SQLite3** (persistencia local)
+- **MongoDB Atlas** (driver oficial `mongodb`)
 - **Tailwind CSS v4** + estilos personalizados con enfoque **BEM** (en `app/globals.css`)
-- **Server Actions**: todas las mutaciones (auth, lecciones, perfil, validación)
+- **Server Actions**: mutaciones (auth, lecciones, perfil, validación)
 
-## Cómo ejecutar
+## Configuración local
 
-Instala dependencias:
+1. Copia variables de entorno:
 
-```bash
-npm install
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-Inicializa la base de datos (crea `./data/saveit.sqlite3` y `./public/uploads`):
+2. Completa **`MONGODB_URI`** (cadena SRV de Atlas) y **`MONGODB_DB=saveit`**.
 
-```bash
-npm run db:init
-```
+3. Instala dependencias:
 
-Arranca el proyecto:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-```
+4. Seed en MongoDB (especialidades + usuario residente demo):
+
+   ```bash
+   npm run db:seed
+   ```
+
+5. Arranca el proyecto:
+
+   ```bash
+   npm run dev
+   ```
 
 Abre `http://localhost:3000`.
 
 ## Usuarios y roles
 
-El sistema distingue 2 roles principales (según el manual):
-
 - **ENGINEER**: registra lecciones y consulta la biblioteca.
 - **RESIDENT**: revisor/validador (puede marcar **EN PROCESO**, **VALIDADO**, **DESCARTADO**).
 
-Al correr `npm run db:init` se crea un usuario demo:
+Tras `npm run db:seed` existe un usuario demo:
 
 - **Residente**: `resident@saveit.local` / `Resident123!`
 
 ## Flujo funcional (resumen)
 
-- **Registrar**: un Ingeniero crea una lección con: título, especialidad (Quality/Safety/Production), descripción, causa raíz, solución, impacto (Time/Cost) y evidencia (imagen opcional).
-- **Validar (Residente)**: revisa y cambia estado:
-  - **RECEIVED** (por defecto)
-  - **IN_PROGRESS** (solicita actualización, comentario opcional)
-  - **VALIDATED** (publica en biblioteca)
-  - **DISCARDED** (no se publica)
-- **Biblioteca**: búsqueda + filtro por especialidad, métricas básicas: **vistas** y **puntuación** (1–5).
+- **Registrar**: lección con título, especialidad, descripción, causa, solución, impacto, fecha de suceso y evidencia (imagen opcional vía Cloudinary).
+- **Validar (Residente)**: estados `RECEIVED`, `IN_PROGRESS`, `VALIDATED`, `DISCARDED`.
+- **Biblioteca**: búsqueda, filtro por especialidad, vistas y puntuación (1–5).
 
 ## Estructura del proyecto
 
 ```
-app/                 Rutas, páginas y layouts (App Router)
-components/          Componentes UI atómicos y responsivos
-lib/                 DB singleton, crypto, paths, sesión
-services/            Acceso a datos (queries Better-SQLite3) siguiendo SOLID
-actions/             Server Actions por dominio (auth, lessons, users)
-types/               Tipos TS: dominio, modelos, ActionResult
-init-db.ts           Script de inicialización/seed de la base de datos
+app/                 Rutas y páginas (App Router)
+components/          UI
+lib/                 mongo client, crypto, objectId helpers, sesión
+services/            Acceso a datos (MongoDB)
+actions/             Server Actions
+types/               Dominio y modelos
+scripts/mongo-seed.ts   Seed Atlas (especialidades + usuario demo)
 ```
 
-### Puntos clave de arquitectura
+## Scripts
 
-- **Separación por capas**:
-  - UI (React) → **Server Actions** → **Services** (SQL) → SQLite
-- **Seguridad**:
-  - La UI no “asume” permisos: cada Server Action valida **autenticación y rol**.
-  - Sesión por cookie httpOnly (`saveit_session`) + tabla `sessions`.
-- **Uploads**:
-  - Evidencias de imagen se guardan en `public/uploads` y se registran en tabla `evidence`.
+- `npm run dev` — desarrollo
+- `npm run db:seed` — seed en MongoDB (requiere `MONGODB_URI`)
+- `npm run lint` — lint
 
-## Scripts útiles
+## Deploy en Vercel
 
-- `npm run dev`: desarrollo
-- `npm run db:init`: inicializa DB/seed
-- `npm run lint`: lint
+1. Crea el proyecto en Vercel enlazado al repo.
+2. En **Settings → Environment Variables** añade:
+   - **`MONGODB_URI`**: tu connection string de Atlas (usuario/contraseña; no subas secretos al repo).
+   - **`MONGODB_DB`**: `saveit` (o el nombre que uses en Atlas).
+   - Variables de **Cloudinary** si subes evidencias (`CLOUDINARY_*` según tu `lib/cloudinary`).
+3. **Build**: `npm run build` (por defecto en Vercel).
+4. Atlas: en **Network Access** permite IPs de Vercel (a menudo `0.0.0.0/0` en desarrollo; en producción restringe si puedes).
+5. Ejecuta **`npm run db:seed`** una vez contra tu cluster (desde tu máquina con `.env.local`, o un job CI con secretos) para tener especialidades y el usuario demo.
 
+Los IDs en la API son **ObjectId en hex (24 caracteres)**, por ejemplo en URLs `/library/[id]`.

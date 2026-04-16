@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createLessonAction } from "@/actions/lessons";
 import { Button } from "@/components/ui/Button";
@@ -14,20 +14,21 @@ import type { ActionResult } from "@/types/actions";
 import type { Specialty } from "@/types/models";
 import styles from "./LessonCreateForm.module.css";
 
-type State = ActionResult<{ lessonId: number }> | null;
+type State = ActionResult<{ lessonId: string }> | null;
 
 export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) {
   const router = useRouter();
+  const didNavigate = useRef(false);
   const [state, action, pending] = useActionState<State, FormData>(
     createLessonAction,
     null,
   );
 
   useEffect(() => {
-    if (state?.ok) {
-      router.push("/dashboard");
-      router.refresh();
-    }
+    if (!state?.ok || didNavigate.current) return;
+    didNavigate.current = true;
+    // createLessonAction already revalidatePath("/dashboard"); extra refresh() duplicated work.
+    router.push("/dashboard");
   }, [state, router]);
 
   const fieldErrors = state && !state.ok ? state.error.fieldErrors : undefined;

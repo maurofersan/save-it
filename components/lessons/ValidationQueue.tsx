@@ -10,7 +10,7 @@ import type { LessonWithSpecialty } from "@/types/models";
 
 type State = ActionResult<unknown> | null;
 
-function ReviewActions({ lessonId }: { lessonId: number }) {
+function ReviewActions({ lessonId }: { lessonId: string }) {
   const [state, action, pending] = useActionState<State, FormData>(
     setLessonStatusAction,
     null,

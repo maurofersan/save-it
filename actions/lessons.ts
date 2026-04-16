@@ -39,13 +39,13 @@ export async function getLessonFormData(): Promise<{
 }> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return { specialties: listSpecialties() };
+  return { specialties: await listSpecialties() };
 }
 
 export async function createLessonAction(
   _prevState: unknown,
   formData: FormData,
-): Promise<ActionResult<{ lessonId: number }>> {
+): Promise<ActionResult<{ lessonId: string }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
 
@@ -71,13 +71,13 @@ export async function createLessonAction(
     };
   }
 
-  const specialties = listSpecialties();
+  const specialties = await listSpecialties();
   const specialty = specialties.find((s) => s.key === parsed.data.specialtyKey);
   if (!specialty) {
     return { ok: false, error: { message: "Especialidad inválida" } };
   }
 
-  const lesson = createLesson({
+  const lesson = await createLesson({
     title: parsed.data.title,
     specialtyId: specialty.id,
     description: parsed.data.description,
@@ -92,7 +92,7 @@ export async function createLessonAction(
   const evidenceFile = formData.get("evidence") as File | null;
   if (evidenceFile && evidenceFile.size > 0) {
     const savedUrl = await saveEvidenceImage(evidenceFile, lesson.id);
-    addEvidence({ lessonId: lesson.id, type: "IMAGE", url: savedUrl });
+    await addEvidence({ lessonId: lesson.id, type: "IMAGE", url: savedUrl });
   }
 
   revalidatePath("/dashboard");
@@ -110,7 +110,7 @@ export async function setLessonStatusAction(
   if (user.role !== "RESIDENT")
     return { ok: false, error: { message: "No autorizado" } };
 
-  const lessonId = Number(formData.get("lessonId") ?? 0);
+  const lessonId = String(formData.get("lessonId") ?? "").trim();
   const status = String(formData.get("status") ?? "") as LessonStatus;
   const commentRaw = String(formData.get("reviewerComment") ?? "").trim();
   const reviewerComment = commentRaw.length ? commentRaw : null;
@@ -120,7 +120,7 @@ export async function setLessonStatusAction(
     return { ok: false, error: { message: "Solicitud inválida" } };
   }
 
-  const updated = setLessonStatus({ lessonId, status, reviewerComment });
+  const updated = await setLessonStatus({ lessonId, status, reviewerComment });
   revalidatePath("/validate");
   revalidatePath("/library");
   revalidatePath("/dashboard");
@@ -140,23 +140,23 @@ export async function rateLesson(
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
 
-  const lessonId = Number(formData.get("lessonId") ?? 0);
+  const lessonId = String(formData.get("lessonId") ?? "").trim();
   const rating = Number(formData.get("rating") ?? 0);
   if (!lessonId || !(rating >= 1 && rating <= 5)) {
     return { ok: false, error: { message: "Solicitud inválida" } };
   }
 
-  const agg = upsertLessonRating({ lessonId, userId: user.id, rating });
+  const agg = await upsertLessonRating({ lessonId, userId: user.id, rating });
   revalidatePath("/library");
   return { ok: true, data: agg };
 }
 
 export async function incrementViewsAction(
-  lessonId: number,
+  lessonId: string,
 ): Promise<ActionResult<{ views: number }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
-  const views = incrementLessonViews(lessonId);
+  const views = await incrementLessonViews(lessonId);
   return { ok: true, data: { views } };
 }
 
@@ -167,7 +167,7 @@ export async function listValidationQueue(input: {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "RESIDENT") redirect("/dashboard");
-  return listLessonsForValidation(input);
+  return await listLessonsForValidation(input);
 }
 
 export async function searchLibrary(input: {
@@ -176,12 +176,12 @@ export async function searchLibrary(input: {
 }): Promise<LessonWithSpecialty[]> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return searchValidatedLessons(input);
+  return await searchValidatedLessons(input);
 }
 
 async function saveEvidenceImage(
   file: File,
-  lessonId: number,
+  lessonId: string,
 ): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("La evidencia debe ser una imagen");

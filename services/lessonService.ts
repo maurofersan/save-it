@@ -1,377 +1,469 @@
-import { getDb } from "@/lib/db";
+import { ObjectId } from "mongodb";
+import { getMongoDb } from "@/lib/mongo";
 import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import type { LessonStatus } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty } from "@/types/models";
 
-type LessonRow = {
-  id: number;
-  title: string;
-  specialty_id: number;
-  description: string;
-  root_cause: string;
-  solution: string;
-  event_date: string | null;
-  impact_type: Lesson["impactType"];
-  impact_value: number;
-  status: LessonStatus;
-  reviewer_comment: string | null;
-  created_by: number;
-  created_at: string;
-  updated_at: string;
-  validated_at: string | null;
-  views_count: number;
-  rating_count: number;
-  rating_avg: number;
-};
+const LESSONS = "lessons";
+const SPECIALTIES = "specialties";
+const USERS = "users";
+const RATINGS = "lesson_ratings";
 
-function mapLesson(row: LessonRow): Lesson {
-  return {
-    id: row.id,
-    title: row.title,
-    specialtyId: row.specialty_id,
-    description: row.description,
-    rootCause: row.root_cause,
-    solution: row.solution,
-    eventDate: row.event_date,
-    impactType: row.impact_type,
-    impactValue: row.impact_value,
-    status: row.status,
-    reviewerComment: row.reviewer_comment,
-    createdBy: row.created_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    validatedAt: row.validated_at,
-    viewsCount: row.views_count,
-    ratingCount: row.rating_count,
-    ratingAvg: row.rating_avg,
-  };
-}
-
-export function createLesson(input: {
+type LessonDoc = {
+  _id: ObjectId;
   title: string;
-  specialtyId: number;
+  specialtyId: ObjectId;
   description: string;
   rootCause: string;
   solution: string;
   eventDate: string | null;
   impactType: Lesson["impactType"];
   impactValue: number;
-  createdBy: number;
-}): Lesson {
-  const db = getDb();
-  const res = db
-    .prepare(
-      `
-      INSERT INTO lessons (
-        title, specialty_id, description, root_cause, solution,
-        event_date, impact_type, impact_value, status, created_by
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'RECEIVED', ?)
-    `,
-    )
-    .run(
-      input.title,
-      input.specialtyId,
-      input.description,
-      input.rootCause,
-      input.solution,
-      input.eventDate,
-      input.impactType,
-      input.impactValue,
-      input.createdBy,
-    );
+  status: LessonStatus;
+  reviewerComment: string | null;
+  createdBy: ObjectId;
+  createdAt: string;
+  updatedAt: string;
+  validatedAt: string | null;
+  viewsCount: number;
+  ratingCount: number;
+  ratingAvg: number;
+};
 
-  const lesson = getLessonById(Number(res.lastInsertRowid));
+function mapLesson(doc: LessonDoc): Lesson {
+  return {
+    id: doc._id.toHexString(),
+    title: doc.title,
+    specialtyId: doc.specialtyId.toHexString(),
+    description: doc.description,
+    rootCause: doc.rootCause,
+    solution: doc.solution,
+    eventDate: doc.eventDate,
+    impactType: doc.impactType,
+    impactValue: doc.impactValue,
+    status: doc.status,
+    reviewerComment: doc.reviewerComment,
+    createdBy: doc.createdBy.toHexString(),
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    validatedAt: doc.validatedAt,
+    viewsCount: doc.viewsCount,
+    ratingCount: doc.ratingCount,
+    ratingAvg: doc.ratingAvg,
+  };
+}
+
+export async function createLesson(input: {
+  title: string;
+  specialtyId: string;
+  description: string;
+  rootCause: string;
+  solution: string;
+  eventDate: string | null;
+  impactType: Lesson["impactType"];
+  impactValue: number;
+  createdBy: string;
+}): Promise<Lesson> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const res = await db.collection(LESSONS).insertOne({
+    title: input.title,
+    specialtyId: new ObjectId(input.specialtyId),
+    description: input.description,
+    rootCause: input.rootCause,
+    solution: input.solution,
+    eventDate: input.eventDate,
+    impactType: input.impactType,
+    impactValue: input.impactValue,
+    status: "RECEIVED",
+    reviewerComment: null,
+    createdBy: new ObjectId(input.createdBy),
+    createdAt: now,
+    updatedAt: now,
+    validatedAt: null,
+    viewsCount: 0,
+    ratingCount: 0,
+    ratingAvg: 0,
+  });
+  const lesson = await getLessonById(res.insertedId.toHexString());
   if (!lesson) throw new Error("Failed to create lesson");
   return lesson;
 }
 
-export function getLessonById(id: number): Lesson | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT id, title, specialty_id, description, root_cause, solution,
-             event_date, impact_type, impact_value, status, reviewer_comment, created_by,
-             created_at, updated_at, validated_at, views_count, rating_count, rating_avg
-      FROM lessons
-      WHERE id = ?
-    `,
-    )
-    .get(id) as LessonRow | undefined;
-  return row ? mapLesson(row) : null;
+export async function getLessonById(id: string): Promise<Lesson | null> {
+  const db = await getMongoDb();
+  let oid: ObjectId;
+  try {
+    oid = new ObjectId(id);
+  } catch {
+    return null;
+  }
+  const doc = await db.collection<LessonDoc>(LESSONS).findOne({ _id: oid });
+  return doc ? mapLesson(doc) : null;
 }
 
-export function getValidatedLessonWithSpecialtyById(id: number): LessonWithSpecialty | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT
-        l.id,
-        l.title,
-        l.specialty_id,
-        l.description,
-        l.root_cause,
-        l.solution,
-        l.event_date,
-        l.impact_type,
-        l.impact_value,
-        l.status,
-        l.reviewer_comment,
-        l.created_by,
-        l.created_at,
-        l.updated_at,
-        l.validated_at,
-        l.views_count,
-        l.rating_count,
-        l.rating_avg,
-        s.key as specialty_key,
-        s.name as specialty_name,
-        u.name as created_by_name,
-        u.email as created_by_email
-      FROM lessons l
-      JOIN specialties s ON s.id = l.specialty_id
-      JOIN users u ON u.id = l.created_by
-      WHERE l.id = ? AND l.status = 'VALIDATED'
-    `,
-    )
-    .get(id) as
-    | (LessonRow & {
+export async function getValidatedLessonWithSpecialtyById(
+  id: string,
+): Promise<LessonWithSpecialty | null> {
+  const db = await getMongoDb();
+  let oid: ObjectId;
+  try {
+    oid = new ObjectId(id);
+  } catch {
+    return null;
+  }
+  const rows = await db
+    .collection<LessonDoc>(LESSONS)
+    .aggregate<
+      LessonDoc & {
         specialty_key: LessonWithSpecialty["specialtyKey"];
-        specialty_name: string;
         created_by_name: string;
         created_by_email: string;
-      })
-    | undefined;
+      }
+    >([
+      { $match: { _id: oid, status: "VALIDATED" } },
+      {
+        $lookup: {
+          from: SPECIALTIES,
+          localField: "specialtyId",
+          foreignField: "_id",
+          as: "s",
+        },
+      },
+      { $unwind: "$s" },
+      {
+        $lookup: {
+          from: USERS,
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "u",
+        },
+      },
+      { $unwind: "$u" },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          specialtyId: 1,
+          description: 1,
+          rootCause: 1,
+          solution: 1,
+          eventDate: 1,
+          impactType: 1,
+          impactValue: 1,
+          status: 1,
+          reviewerComment: 1,
+          createdBy: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          validatedAt: 1,
+          viewsCount: 1,
+          ratingCount: 1,
+          ratingAvg: 1,
+          specialty_key: "$s.key",
+          created_by_name: "$u.name",
+          created_by_email: "$u.email",
+        },
+      },
+      { $limit: 1 },
+    ])
+    .toArray();
 
+  const row = rows[0];
   if (!row) return null;
+  const { specialty_key, created_by_name, created_by_email, ...lessonFields } = row;
+  const base = mapLesson(lessonFields as LessonDoc);
   return {
-    ...mapLesson(row),
-    specialtyKey: row.specialty_key,
-    specialtyName: getSpecialtyLabel(row.specialty_key),
-    createdByName: row.created_by_name,
-    createdByEmail: row.created_by_email,
+    ...base,
+    specialtyKey: specialty_key,
+    specialtyName: getSpecialtyLabel(specialty_key),
+    createdByName: created_by_name,
+    createdByEmail: created_by_email,
   };
 }
 
-export function setLessonStatus(input: {
-  lessonId: number;
+export async function setLessonStatus(input: {
+  lessonId: string;
   status: LessonStatus;
   reviewerComment: string | null;
-}): Lesson {
-  const db = getDb();
-  const validatedAt =
-    input.status === "VALIDATED" ? new Date().toISOString() : null;
+}): Promise<Lesson> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const $set: Record<string, unknown> = {
+    status: input.status,
+    reviewerComment: input.reviewerComment,
+    updatedAt: now,
+  };
+  if (input.status === "VALIDATED") {
+    $set.validatedAt = new Date().toISOString();
+  }
 
-  db.prepare(
-    `
-      UPDATE lessons
-      SET status = ?,
-          reviewer_comment = ?,
-          validated_at = COALESCE(?, validated_at),
-          updated_at = datetime('now')
-      WHERE id = ?
-    `,
-  ).run(input.status, input.reviewerComment, validatedAt, input.lessonId);
+  const r = await db.collection<LessonDoc>(LESSONS).updateOne(
+    { _id: new ObjectId(input.lessonId) },
+    { $set },
+  );
+  if (r.matchedCount === 0) throw new Error("Lesson not found");
 
-  const lesson = getLessonById(input.lessonId);
+  const lesson = await getLessonById(input.lessonId);
   if (!lesson) throw new Error("Lesson not found after update");
   return lesson;
 }
 
-export function incrementLessonViews(lessonId: number): number {
-  const db = getDb();
-  db.prepare("UPDATE lessons SET views_count = views_count + 1 WHERE id = ?").run(
-    lessonId,
+export async function incrementLessonViews(lessonId: string): Promise<number> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const oid = new ObjectId(lessonId);
+  const r = await db.collection<LessonDoc>(LESSONS).updateOne(
+    { _id: oid },
+    { $inc: { viewsCount: 1 }, $set: { updatedAt: now } },
   );
-  const row = db
-    .prepare("SELECT views_count FROM lessons WHERE id = ?")
-    .get(lessonId) as { views_count: number } | undefined;
-  if (!row) throw new Error("Lesson not found");
-  return row.views_count;
+  if (r.matchedCount === 0) throw new Error("Lesson not found");
+  const doc = await db.collection<LessonDoc>(LESSONS).findOne(
+    { _id: oid },
+    { projection: { viewsCount: 1 } },
+  );
+  if (!doc) throw new Error("Lesson not found");
+  return doc.viewsCount;
 }
 
-export function upsertLessonRating(input: {
-  lessonId: number;
-  userId: number;
+export async function upsertLessonRating(input: {
+  lessonId: string;
+  userId: string;
   rating: number;
-}): { ratingAvg: number; ratingCount: number } {
-  const db = getDb();
-  const tx = db.transaction(() => {
-    db.prepare(
-      `
-      INSERT INTO lesson_ratings (lesson_id, user_id, rating)
-      VALUES (?, ?, ?)
-      ON CONFLICT(lesson_id, user_id) DO UPDATE SET rating = excluded.rating
-    `,
-    ).run(input.lessonId, input.userId, input.rating);
+}): Promise<{ ratingAvg: number; ratingCount: number }> {
+  const db = await getMongoDb();
+  const lessonOid = new ObjectId(input.lessonId);
+  const userOid = new ObjectId(input.userId);
+  const now = new Date().toISOString();
 
-    const agg = db
-      .prepare(
-        `
-        SELECT AVG(rating) as avg_rating, COUNT(*) as cnt
-        FROM lesson_ratings
-        WHERE lesson_id = ?
-      `,
-      )
-      .get(input.lessonId) as { avg_rating: number; cnt: number };
+  await db.collection(RATINGS).updateOne(
+    { lessonId: lessonOid, userId: userOid },
+    {
+      $set: { rating: input.rating, updatedAt: now },
+      $setOnInsert: { createdAt: now },
+    },
+    { upsert: true },
+  );
 
-    db.prepare(
-      `
-      UPDATE lessons
-      SET rating_avg = ?, rating_count = ?, updated_at = datetime('now')
-      WHERE id = ?
-    `,
-    ).run(agg.avg_rating ?? 0, agg.cnt ?? 0, input.lessonId);
+  const agg = await db
+    .collection(RATINGS)
+    .aggregate<{ avg: number; cnt: number }>([
+      { $match: { lessonId: lessonOid } },
+      {
+        $group: {
+          _id: null,
+          avg: { $avg: "$rating" },
+          cnt: { $sum: 1 },
+        },
+      },
+    ])
+    .toArray();
 
-    return { ratingAvg: agg.avg_rating ?? 0, ratingCount: agg.cnt ?? 0 };
-  });
-  return tx();
+  const ratingAvg = agg[0]?.avg ?? 0;
+  const ratingCount = agg[0]?.cnt ?? 0;
+
+  await db.collection<LessonDoc>(LESSONS).updateOne(
+    { _id: lessonOid },
+    {
+      $set: {
+        ratingAvg,
+        ratingCount,
+        updatedAt: now,
+      },
+    },
+  );
+
+  return { ratingAvg, ratingCount };
 }
 
-export function listLessonsForValidation(filters: {
+export async function listLessonsForValidation(filters: {
   q?: string;
   status?: LessonStatus;
-}): LessonWithSpecialty[] {
-  const db = getDb();
+}): Promise<LessonWithSpecialty[]> {
+  const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
-  const status = filters.status ?? undefined;
+  const status = filters.status;
 
-  const where: string[] = [];
-  const params: Array<string | number> = [];
+  const pipeline: object[] = [
+    {
+      $lookup: {
+        from: USERS,
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "u",
+      },
+    },
+    { $unwind: "$u" },
+    {
+      $lookup: {
+        from: SPECIALTIES,
+        localField: "specialtyId",
+        foreignField: "_id",
+        as: "s",
+      },
+    },
+    { $unwind: "$s" },
+  ];
 
+  const match: Record<string, unknown> = {};
+  if (status) match.status = status;
   if (q) {
-    where.push("(l.title LIKE ? OR l.description LIKE ? OR u.name LIKE ?)");
-    const like = `%${q}%`;
-    params.push(like, like, like);
+    match.$or = [
+      { title: { $regex: escapeRegex(q), $options: "i" } },
+      { description: { $regex: escapeRegex(q), $options: "i" } },
+      { "u.name": { $regex: escapeRegex(q), $options: "i" } },
+    ];
   }
-  if (status) {
-    where.push("l.status = ?");
-    params.push(status);
-  }
+  if (Object.keys(match).length) pipeline.push({ $match: match });
 
-  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  pipeline.push({ $sort: { createdAt: -1 } });
 
-  const rows = db
-    .prepare(
-      `
-      SELECT
-        l.id,
-        l.title,
-        l.specialty_id,
-        l.description,
-        l.root_cause,
-        l.solution,
-        l.event_date,
-        l.impact_type,
-        l.impact_value,
-        l.status,
-        l.reviewer_comment,
-        l.created_by,
-        l.created_at,
-        l.updated_at,
-        l.validated_at,
-        l.views_count,
-        l.rating_count,
-        l.rating_avg,
-        s.key as specialty_key,
-        s.name as specialty_name,
-        u.name as created_by_name,
-        u.email as created_by_email
-      FROM lessons l
-      JOIN specialties s ON s.id = l.specialty_id
-      JOIN users u ON u.id = l.created_by
-      ${whereSql}
-      ORDER BY l.created_at DESC
-    `,
-    )
-    .all(...params) as Array<
-    LessonRow & {
-      specialty_key: LessonWithSpecialty["specialtyKey"];
-      specialty_name: string;
-      created_by_name: string;
-      created_by_email: string;
-    }
-  >;
+  pipeline.push({
+    $project: {
+      _id: 1,
+      title: 1,
+      specialtyId: 1,
+      description: 1,
+      rootCause: 1,
+      solution: 1,
+      eventDate: 1,
+      impactType: 1,
+      impactValue: 1,
+      status: 1,
+      reviewerComment: 1,
+      createdBy: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      validatedAt: 1,
+      viewsCount: 1,
+      ratingCount: 1,
+      ratingAvg: 1,
+      specialty_key: "$s.key",
+      created_by_name: "$u.name",
+      created_by_email: "$u.email",
+    },
+  });
 
-  return rows.map((r) => ({
-    ...mapLesson(r),
-    specialtyKey: r.specialty_key,
-    specialtyName: getSpecialtyLabel(r.specialty_key),
-    createdByName: r.created_by_name,
-    createdByEmail: r.created_by_email,
-  }));
+  const rows = await db
+    .collection<LessonDoc>(LESSONS)
+    .aggregate<
+      LessonDoc & {
+        specialty_key: LessonWithSpecialty["specialtyKey"];
+        created_by_name: string;
+        created_by_email: string;
+      }
+    >(pipeline)
+    .toArray();
+
+  return rows.map((row) => {
+    const { specialty_key, created_by_name, created_by_email, ...rest } = row;
+    return {
+      ...mapLesson(rest as LessonDoc),
+      specialtyKey: specialty_key,
+      specialtyName: getSpecialtyLabel(specialty_key),
+      createdByName: created_by_name,
+      createdByEmail: created_by_email,
+    };
+  });
 }
 
-export function searchValidatedLessons(filters: {
+export async function searchValidatedLessons(filters: {
   q?: string;
   specialtyKey?: LessonWithSpecialty["specialtyKey"];
-}): LessonWithSpecialty[] {
-  const db = getDb();
+}): Promise<LessonWithSpecialty[]> {
+  const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
-  const where: string[] = ["l.status = 'VALIDATED'"];
-  const params: Array<string> = [];
 
-  if (q) {
-    where.push("(l.title LIKE ? OR l.description LIKE ? OR l.root_cause LIKE ? OR l.solution LIKE ?)");
-    const like = `%${q}%`;
-    params.push(like, like, like, like);
-  }
+  const pipeline: object[] = [
+    { $match: { status: "VALIDATED" } },
+    {
+      $lookup: {
+        from: SPECIALTIES,
+        localField: "specialtyId",
+        foreignField: "_id",
+        as: "s",
+      },
+    },
+    { $unwind: "$s" },
+    {
+      $lookup: {
+        from: USERS,
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "u",
+      },
+    },
+    { $unwind: "$u" },
+  ];
+
+  const and: object[] = [];
   if (filters.specialtyKey) {
-    where.push("s.key = ?");
-    params.push(filters.specialtyKey);
+    and.push({ "s.key": filters.specialtyKey });
   }
+  if (q) {
+    const rx = escapeRegex(q);
+    and.push({
+      $or: [
+        { title: { $regex: rx, $options: "i" } },
+        { description: { $regex: rx, $options: "i" } },
+        { rootCause: { $regex: rx, $options: "i" } },
+        { solution: { $regex: rx, $options: "i" } },
+      ],
+    });
+  }
+  if (and.length) pipeline.push({ $match: { $and: and } });
 
-  const rows = db
-    .prepare(
-      `
-      SELECT
-        l.id,
-        l.title,
-        l.specialty_id,
-        l.description,
-        l.root_cause,
-        l.solution,
-        l.event_date,
-        l.impact_type,
-        l.impact_value,
-        l.status,
-        l.reviewer_comment,
-        l.created_by,
-        l.created_at,
-        l.updated_at,
-        l.validated_at,
-        l.views_count,
-        l.rating_count,
-        l.rating_avg,
-        s.key as specialty_key,
-        s.name as specialty_name,
-        u.name as created_by_name,
-        u.email as created_by_email
-      FROM lessons l
-      JOIN specialties s ON s.id = l.specialty_id
-      JOIN users u ON u.id = l.created_by
-      WHERE ${where.join(" AND ")}
-      ORDER BY l.rating_avg DESC, l.views_count DESC, l.created_at DESC
-      LIMIT 100
-    `,
-    )
-    .all(...params) as Array<
-    LessonRow & {
-      specialty_key: LessonWithSpecialty["specialtyKey"];
-      specialty_name: string;
-      created_by_name: string;
-      created_by_email: string;
-    }
-  >;
+  pipeline.push({ $sort: { ratingAvg: -1, viewsCount: -1, createdAt: -1 } });
+  pipeline.push({ $limit: 100 });
+  pipeline.push({
+    $project: {
+      _id: 1,
+      title: 1,
+      specialtyId: 1,
+      description: 1,
+      rootCause: 1,
+      solution: 1,
+      eventDate: 1,
+      impactType: 1,
+      impactValue: 1,
+      status: 1,
+      reviewerComment: 1,
+      createdBy: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      validatedAt: 1,
+      viewsCount: 1,
+      ratingCount: 1,
+      ratingAvg: 1,
+      specialty_key: "$s.key",
+      created_by_name: "$u.name",
+      created_by_email: "$u.email",
+    },
+  });
 
-  return rows.map((r) => ({
-    ...mapLesson(r),
-    specialtyKey: r.specialty_key,
-    specialtyName: getSpecialtyLabel(r.specialty_key),
-    createdByName: r.created_by_name,
-    createdByEmail: r.created_by_email,
-  }));
+  const rows = await db
+    .collection<LessonDoc>(LESSONS)
+    .aggregate<
+      LessonDoc & {
+        specialty_key: LessonWithSpecialty["specialtyKey"];
+        created_by_name: string;
+        created_by_email: string;
+      }
+    >(pipeline)
+    .toArray();
+
+  return rows.map((row) => {
+    const { specialty_key, created_by_name, created_by_email, ...rest } = row;
+    return {
+      ...mapLesson(rest as LessonDoc),
+      specialtyKey: specialty_key,
+      specialtyName: getSpecialtyLabel(specialty_key),
+      createdByName: created_by_name,
+      createdByEmail: created_by_email,
+    };
+  });
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

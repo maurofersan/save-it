@@ -8,7 +8,7 @@ export function RatingStars({
   initialAvg,
   initialCount,
 }: {
-  lessonId: number;
+  lessonId: string;
   initialAvg: number;
   initialCount: number;
 }) {

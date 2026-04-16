@@ -16,15 +16,21 @@ export default async function SettingsPage() {
     <AppShell activePath="/settings">
       <Card>
         <CardHeader>
-          <div className="text-sm font-semibold text-blue-200">Configuración</div>
-          <div className="mt-1 text-xl font-semibold text-slate-50">Preferencias</div>
+          <div className="text-sm font-semibold text-blue-200">
+            Configuración
+          </div>
+          <div className="mt-1 text-xl font-semibold text-slate-50">
+            Preferencias
+          </div>
           <div className="mt-1 text-sm text-slate-300">
-            Ajusta usuario/contraseña y notificaciones (UI preparada).
+            Ajusta usuario/contraseña.
           </div>
         </CardHeader>
         <CardBody className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm font-semibold text-slate-100">Usuario y contraseña</div>
+            <div className="text-sm font-semibold text-slate-100">
+              Usuario y contraseña
+            </div>
             <div className="mt-1 text-sm text-slate-300">
               Próxima iteración: cambio de contraseña.
             </div>
@@ -34,7 +40,7 @@ export default async function SettingsPage() {
               </Button>
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          {/* <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm font-semibold text-slate-100">Notificaciones</div>
             <div className="mt-1 text-sm text-slate-300">
               Próxima iteración: alertas por lecciones nuevas.
@@ -44,10 +50,9 @@ export default async function SettingsPage() {
                 Configurar
               </Button>
             </div>
-          </div>
+          </div> */}
         </CardBody>
       </Card>
     </AppShell>
   );
 }
-

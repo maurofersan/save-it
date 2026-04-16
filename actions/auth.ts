@@ -77,7 +77,7 @@ export async function registerAction(
     };
   }
 
-  const existing = getUserAuthByEmail(parsed.data.email);
+  const existing = await getUserAuthByEmail(parsed.data.email);
   if (existing) {
     return {
       ok: false,
@@ -86,7 +86,7 @@ export async function registerAction(
   }
 
   const pw = await hashPassword(parsed.data.password);
-  const user = createUser({
+  const user = await createUser({
     name: parsed.data.name,
     email: parsed.data.email,
     role: parsed.data.role as UserRole,
@@ -95,7 +95,7 @@ export async function registerAction(
   });
 
   const token = newToken(32);
-  createSession({ userId: user.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
+  await createSession({ userId: user.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
   await setSessionCookie(token);
 
   redirect(safeRedirectPath(formData.get("next")));
@@ -118,7 +118,7 @@ export async function loginAction(
     };
   }
 
-  const userAuth = getUserAuthByEmail(parsed.data.email);
+  const userAuth = await getUserAuthByEmail(parsed.data.email);
   if (!userAuth) {
     return { ok: false, error: { message: "Credenciales inválidas" } };
   }
@@ -131,7 +131,7 @@ export async function loginAction(
   if (!ok) return { ok: false, error: { message: "Credenciales inválidas" } };
 
   const token = newToken(32);
-  createSession({ userId: userAuth.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
+  await createSession({ userId: userAuth.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
   await setSessionCookie(token);
 
   redirect(safeRedirectPath(formData.get("next")));
@@ -140,7 +140,7 @@ export async function loginAction(
 export async function logoutAction(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE_NAME)?.value;
-  if (token) deleteSessionByToken(token);
+  if (token) await deleteSessionByToken(token);
   store.delete(SESSION_COOKIE_NAME);
   redirect("/login");
 }

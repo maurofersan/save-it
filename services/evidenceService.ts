@@ -1,64 +1,51 @@
-import { getDb } from "@/lib/db";
+import { ObjectId } from "mongodb";
+import { getMongoDb } from "@/lib/mongo";
 import type { Evidence } from "@/types/models";
 
-type EvidenceRow = {
-  id: number;
-  lesson_id: number;
+const COL = "evidence";
+
+type EvidenceDoc = {
+  _id: ObjectId;
+  lessonId: ObjectId;
   type: Evidence["type"];
   url: string;
-  created_at: string;
+  createdAt: string;
 };
 
-function mapEvidence(row: EvidenceRow): Evidence {
+function mapEvidence(doc: EvidenceDoc): Evidence {
   return {
-    id: row.id,
-    lessonId: row.lesson_id,
-    type: row.type,
-    url: row.url,
-    createdAt: row.created_at,
+    id: doc._id.toHexString(),
+    lessonId: doc.lessonId.toHexString(),
+    type: doc.type,
+    url: doc.url,
+    createdAt: doc.createdAt,
   };
 }
 
-export function addEvidence(input: {
-  lessonId: number;
+export async function addEvidence(input: {
+  lessonId: string;
   type: Evidence["type"];
   url: string;
-}): Evidence {
-  const db = getDb();
-  const res = db
-    .prepare(
-      `
-      INSERT INTO evidence (lesson_id, type, url)
-      VALUES (?, ?, ?)
-    `,
-    )
-    .run(input.lessonId, input.type, input.url);
-
-  const row = db
-    .prepare(
-      `
-      SELECT id, lesson_id, type, url, created_at
-      FROM evidence
-      WHERE id = ?
-    `,
-    )
-    .get(Number(res.lastInsertRowid)) as EvidenceRow | undefined;
+}): Promise<Evidence> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const res = await db.collection(COL).insertOne({
+    lessonId: new ObjectId(input.lessonId),
+    type: input.type,
+    url: input.url,
+    createdAt: now,
+  });
+  const row = (await db.collection(COL).findOne({ _id: res.insertedId })) as EvidenceDoc | null;
   if (!row) throw new Error("Failed to create evidence");
   return mapEvidence(row);
 }
 
-export function listEvidenceForLesson(lessonId: number): Evidence[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `
-      SELECT id, lesson_id, type, url, created_at
-      FROM evidence
-      WHERE lesson_id = ?
-      ORDER BY id ASC
-    `,
-    )
-    .all(lessonId) as EvidenceRow[];
+export async function listEvidenceForLesson(lessonId: string): Promise<Evidence[]> {
+  const db = await getMongoDb();
+  const rows = (await db
+    .collection(COL)
+    .find({ lessonId: new ObjectId(lessonId) })
+    .sort({ _id: 1 })
+    .toArray()) as EvidenceDoc[];
   return rows.map(mapEvidence);
 }
-

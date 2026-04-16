@@ -1,147 +1,139 @@
-import { getDb } from "@/lib/db";
+import { ObjectId } from "mongodb";
+import { getMongoDb } from "@/lib/mongo";
 import type { User } from "@/types/models";
 import type { UserRole } from "@/types/domain";
 
-type UserRow = {
-  id: number;
+const COL = "users";
+
+type UserDoc = {
+  _id: ObjectId;
   name: string;
   email: string;
   phone: string | null;
   company: string | null;
   title: string | null;
   role: UserRole;
-  created_at: string;
-  updated_at: string;
+  passwordSaltHex: string;
+  passwordHashHex: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type UserAuthRow = UserRow & {
-  password_salt_hex: string;
-  password_hash_hex: string;
-};
-
-function mapUser(row: UserRow): User {
+function mapUser(doc: Omit<UserDoc, "passwordSaltHex" | "passwordHashHex">): User {
   return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    phone: row.phone,
-    company: row.company,
-    title: row.title,
-    role: row.role,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: doc._id.toHexString(),
+    name: doc.name,
+    email: doc.email,
+    phone: doc.phone,
+    company: doc.company,
+    title: doc.title,
+    role: doc.role,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
   };
 }
 
-export function getUserById(id: number): User | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT id, name, email, phone, company, title, role, created_at, updated_at
-      FROM users
-      WHERE id = ?
-    `,
-    )
-    .get(id) as UserRow | undefined;
-  return row ? mapUser(row) : null;
+export async function getUserById(id: string): Promise<User | null> {
+  const db = await getMongoDb();
+  let oid: ObjectId;
+  try {
+    oid = new ObjectId(id);
+  } catch {
+    return null;
+  }
+  const doc = (await db.collection<UserDoc>(COL).findOne(
+    { _id: oid },
+    { projection: { passwordSaltHex: 0, passwordHashHex: 0 } },
+  )) as Omit<UserDoc, "passwordSaltHex" | "passwordHashHex"> | null;
+  return doc ? mapUser(doc) : null;
 }
 
-export function getUserByEmail(email: string): User | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT id, name, email, phone, company, title, role, created_at, updated_at
-      FROM users
-      WHERE email = ?
-    `,
-    )
-    .get(email) as UserRow | undefined;
-  return row ? mapUser(row) : null;
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const db = await getMongoDb();
+  const doc = (await db.collection<UserDoc>(COL).findOne(
+    { email: email.toLowerCase() },
+    { projection: { passwordSaltHex: 0, passwordHashHex: 0 } },
+  )) as Omit<UserDoc, "passwordSaltHex" | "passwordHashHex"> | null;
+  return doc ? mapUser(doc) : null;
 }
 
-export function getUserAuthByEmail(email: string): (User & { password: { saltHex: string; hashHex: string } }) | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `
-      SELECT id, name, email, phone, company, title, role, created_at, updated_at,
-             password_salt_hex, password_hash_hex
-      FROM users
-      WHERE email = ?
-    `,
-    )
-    .get(email) as UserAuthRow | undefined;
-  if (!row) return null;
+export async function getUserAuthByEmail(
+  email: string,
+): Promise<(User & { password: { saltHex: string; hashHex: string } }) | null> {
+  const db = await getMongoDb();
+  const doc = await db.collection<UserDoc>(COL).findOne({ email: email.toLowerCase() });
+  if (!doc) return null;
   return {
-    ...mapUser(row),
-    password: { saltHex: row.password_salt_hex, hashHex: row.password_hash_hex },
+    ...mapUser(doc),
+    password: { saltHex: doc.passwordSaltHex, hashHex: doc.passwordHashHex },
   };
 }
 
-export function createUser(input: {
+export async function createUser(input: {
   name: string;
   email: string;
   role: UserRole;
   passwordSaltHex: string;
   passwordHashHex: string;
-}): User {
-  const db = getDb();
-  const res = db
-    .prepare(
-      `
-      INSERT INTO users (name, email, role, password_salt_hex, password_hash_hex)
-      VALUES (?, ?, ?, ?, ?)
-    `,
-    )
-    .run(
-      input.name,
-      input.email.toLowerCase(),
-      input.role,
-      input.passwordSaltHex,
-      input.passwordHashHex,
-    );
-  const user = getUserById(Number(res.lastInsertRowid));
+}): Promise<User> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const res = await db.collection(COL).insertOne({
+    name: input.name,
+    email: input.email.toLowerCase(),
+    phone: null,
+    company: null,
+    title: null,
+    role: input.role,
+    passwordSaltHex: input.passwordSaltHex,
+    passwordHashHex: input.passwordHashHex,
+    createdAt: now,
+    updatedAt: now,
+  });
+  const user = await getUserById(res.insertedId.toHexString());
   if (!user) throw new Error("Failed to create user");
   return user;
 }
 
-export function updateUserProfile(
-  userId: number,
+export async function updateUserProfile(
+  userId: string,
   input: { name: string; phone: string | null; company: string | null; title: string | null },
-): User {
-  const db = getDb();
-  db.prepare(
-    `
-      UPDATE users
-      SET name = ?, phone = ?, company = ?, title = ?, updated_at = datetime('now')
-      WHERE id = ?
-    `,
-  ).run(input.name, input.phone, input.company, input.title, userId);
-  const user = getUserById(userId);
+): Promise<User> {
+  const db = await getMongoDb();
+  const oid = new ObjectId(userId);
+  const now = new Date().toISOString();
+  const r = await db.collection<UserDoc>(COL).updateOne(
+    { _id: oid },
+    {
+      $set: {
+        name: input.name,
+        phone: input.phone,
+        company: input.company,
+        title: input.title,
+        updatedAt: now,
+      },
+    },
+  );
+  if (r.matchedCount === 0) throw new Error("User not found");
+  const user = await getUserById(userId);
   if (!user) throw new Error("User not found after update");
   return user;
 }
 
-export function listMembers(): Array<Pick<User, "id" | "name" | "email" | "title" | "role">> {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `
-      SELECT id, name, email, title, role
-      FROM users
-      ORDER BY role DESC, name ASC
-    `,
-    )
-    .all() as Array<{ id: number; name: string; email: string; title: string | null; role: UserRole }>;
-
+export async function listMembers(): Promise<
+  Array<Pick<User, "id" | "name" | "email" | "title" | "role">>
+> {
+  const db = await getMongoDb();
+  const rows = await db
+    .collection<UserDoc>(COL)
+    .find({}, { projection: { _id: 1, name: 1, email: 1, title: 1, role: 1 } })
+    .sort({ role: -1, name: 1 })
+    .toArray();
   return rows.map((r) => ({
-    id: r.id,
+    id: r._id.toHexString(),
     name: r.name,
     email: r.email,
     title: r.title,
     role: r.role,
   }));
 }
-

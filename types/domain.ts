@@ -8,5 +8,5 @@ export type ImpactType = "TIME" | "COST";
 
 export type EvidenceType = "IMAGE";
 
-export type Id = number;
+export type Id = string;
 

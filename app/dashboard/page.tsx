@@ -37,10 +37,10 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const metrics = getDashboardMetrics();
+  const metrics = await getDashboardMetrics();
 
   return (
-    <AppShell activePath="/dashboard">
+    <AppShell activePath="/dashboard" currentUser={user}>
       <div className="grid gap-4 lg:gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

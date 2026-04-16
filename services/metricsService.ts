@@ -1,45 +1,46 @@
-import { getDb } from "@/lib/db";
+import { getMongoDb } from "@/lib/mongo";
 import type { DashboardMetrics } from "@/types/models";
 
-export function getDashboardMetrics(): DashboardMetrics {
-  const db = getDb();
+const LESSONS = "lessons";
+const SPECIALTIES = "specialties";
 
-  const totals = db
-    .prepare(
-      `
-      SELECT
-        COUNT(*) as lessons_total,
-        SUM(CASE WHEN status = 'VALIDATED' THEN 1 ELSE 0 END) as lessons_validated,
-        SUM(CASE WHEN status = 'IN_PROGRESS' OR status = 'RECEIVED' THEN 1 ELSE 0 END) as lessons_in_progress,
-        SUM(CASE WHEN status = 'DISCARDED' THEN 1 ELSE 0 END) as lessons_discarded
-      FROM lessons
-    `,
-    )
-    .get() as {
-    lessons_total: number;
-    lessons_validated: number;
-    lessons_in_progress: number;
-    lessons_discarded: number;
-  };
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  const db = await getMongoDb();
+  const lessons = db.collection(LESSONS);
 
-  const top = db
-    .prepare(
-      `
-      SELECT s.key as specialty_key, COUNT(*) as cnt
-      FROM lessons l
-      JOIN specialties s ON s.id = l.specialty_id
-      GROUP BY s.key
-      ORDER BY cnt DESC
-    `,
-    )
-    .all() as Array<{ specialty_key: DashboardMetrics["topSpecialties"][number]["specialtyKey"]; cnt: number }>;
+  const [
+    lessonsTotal,
+    lessonsValidated,
+    lessonsInProgress,
+    lessonsDiscarded,
+  ] = await Promise.all([
+    lessons.countDocuments({}),
+    lessons.countDocuments({ status: "VALIDATED" }),
+    lessons.countDocuments({ status: { $in: ["RECEIVED", "IN_PROGRESS"] } }),
+    lessons.countDocuments({ status: "DISCARDED" }),
+  ]);
+
+  const top = await lessons
+    .aggregate<{ _id: DashboardMetrics["topSpecialties"][number]["specialtyKey"]; count: number }>([
+      {
+        $lookup: {
+          from: SPECIALTIES,
+          localField: "specialtyId",
+          foreignField: "_id",
+          as: "s",
+        },
+      },
+      { $unwind: "$s" },
+      { $group: { _id: "$s.key", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ])
+    .toArray();
 
   return {
-    lessonsTotal: totals.lessons_total ?? 0,
-    lessonsValidated: totals.lessons_validated ?? 0,
-    lessonsInProgress: totals.lessons_in_progress ?? 0,
-    lessonsDiscarded: totals.lessons_discarded ?? 0,
-    topSpecialties: top.map((t) => ({ specialtyKey: t.specialty_key, count: t.cnt })),
+    lessonsTotal,
+    lessonsValidated,
+    lessonsInProgress,
+    lessonsDiscarded,
+    topSpecialties: top.map((t) => ({ specialtyKey: t._id, count: t.count })),
   };
 }
-

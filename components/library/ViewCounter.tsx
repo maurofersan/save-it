@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { incrementViewsAction } from "@/actions/lessons";
 
-export function ViewCounter({ lessonId, initialViews }: { lessonId: number; initialViews: number }) {
+export function ViewCounter({ lessonId, initialViews }: { lessonId: string; initialViews: number }) {
   const [views, setViews] = useState(initialViews);
   const [pending, startTransition] = useTransition();
 

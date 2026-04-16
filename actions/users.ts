@@ -37,7 +37,7 @@ export async function updateProfileAction(
     };
   }
 
-  const updated = updateUserProfile(user.id, {
+  const updated = await updateUserProfile(user.id, {
     name: parsed.data.name,
     phone: parsed.data.phone?.length ? parsed.data.phone : null,
     company: parsed.data.company?.length ? parsed.data.company : null,

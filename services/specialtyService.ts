@@ -1,22 +1,34 @@
-import { getDb } from "@/lib/db";
+import { ObjectId } from "mongodb";
+import { getMongoDb } from "@/lib/mongo";
 import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import type { Specialty } from "@/types/models";
 
-type SpecialtyRow = { id: number; key: Specialty["key"]; name: string };
+const COL = "specialties";
 
-export function listSpecialties(): Specialty[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT id, key, name FROM specialties ORDER BY id ASC")
-    .all() as SpecialtyRow[];
-  return rows.map((r) => ({ id: r.id, key: r.key, name: getSpecialtyLabel(r.key) }));
+type SpecialtyDoc = {
+  _id: ObjectId;
+  key: Specialty["key"];
+  name: string;
+};
+
+export async function listSpecialties(): Promise<Specialty[]> {
+  const db = await getMongoDb();
+  const rows = await db
+    .collection<SpecialtyDoc>(COL)
+    .find({})
+    .sort({ key: 1 })
+    .toArray();
+  return rows.map((r) => ({
+    id: r._id.toHexString(),
+    key: r.key,
+    name: getSpecialtyLabel(r.key),
+  }));
 }
 
-export function getSpecialtyByKey(key: Specialty["key"]): Specialty | null {
-  const db = getDb();
-  const row = db
-    .prepare("SELECT id, key, name FROM specialties WHERE key = ?")
-    .get(key) as SpecialtyRow | undefined;
-  return row ? { id: row.id, key: row.key, name: getSpecialtyLabel(row.key) } : null;
+export async function getSpecialtyByKey(key: Specialty["key"]): Promise<Specialty | null> {
+  const db = await getMongoDb();
+  const row = await db.collection<SpecialtyDoc>(COL).findOne({ key });
+  return row
+    ? { id: row._id.toHexString(), key: row.key, name: getSpecialtyLabel(row.key) }
+    : null;
 }
-

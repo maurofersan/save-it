@@ -6,11 +6,14 @@ import { AppShellClient } from "@/components/nav/AppShellClient";
 export async function AppShell({
   children,
   activePath,
+  currentUser,
 }: {
   children: ReactNode;
   activePath: string;
+  /** When the parent page already loaded the user, pass it to avoid a second DB round-trip. */
+  currentUser?: User | null;
 }) {
-  const user = await getCurrentUser();
+  const user = currentUser !== undefined ? currentUser : await getCurrentUser();
   const safeUser: User | null = user;
 
   const links = [

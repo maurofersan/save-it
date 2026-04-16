@@ -23,7 +23,7 @@ export default async function LibraryPage({
   if (!user) redirect("/login");
 
   const sp = await searchParams;
-  const specialties = listSpecialties();
+  const specialties = await listSpecialties();
   const specialtyKey: SpecialtyKey | undefined =
     sp.specialty === "QUALITY" ||
     sp.specialty === "SAFETY" ||

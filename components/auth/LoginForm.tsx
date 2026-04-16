@@ -23,7 +23,9 @@ export function LoginForm({ next }: { next?: string }) {
     <Card className="border-white/10">
       <CardHeader>
         <div className="text-sm font-semibold text-blue-200">Bienvenido</div>
-        <div className="mt-1 text-xl font-semibold text-slate-50">Iniciar sesión</div>
+        <div className="mt-1 text-xl font-semibold text-slate-50">
+          Iniciar sesión
+        </div>
         <div className="mt-1 text-sm text-slate-300">
           Ingresa con tu correo y contraseña.
         </div>
@@ -67,14 +69,8 @@ export function LoginForm({ next }: { next?: string }) {
               Crear cuenta
             </Link>
           </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-            Demo Residente: <span className="font-mono">resident@saveit.local</span>{" "}
-            / <span className="font-mono">Resident123!</span>
-          </div>
         </form>
       </CardBody>
     </Card>
   );
 }
-

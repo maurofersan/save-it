@@ -12,12 +12,11 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!token) return null;
 
   const nowIso = new Date().toISOString();
-  deleteExpiredSessions(nowIso);
+  await deleteExpiredSessions(nowIso);
 
-  const session = getSessionByToken(token);
+  const session = await getSessionByToken(token);
   if (!session) return null;
   if (session.expiresAt <= nowIso) return null;
 
   return getUserById(session.userId);
 }
-
