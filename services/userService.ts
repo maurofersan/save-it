@@ -69,6 +69,39 @@ export async function getUserAuthByEmail(
   };
 }
 
+export async function getUserAuthById(
+  id: string,
+): Promise<(User & { password: { saltHex: string; hashHex: string } }) | null> {
+  const db = await getMongoDb();
+  let oid: ObjectId;
+  try {
+    oid = new ObjectId(id);
+  } catch {
+    return null;
+  }
+  const doc = await db.collection<UserDoc>(COL).findOne({ _id: oid });
+  if (!doc) return null;
+  return {
+    ...mapUser(doc),
+    password: { saltHex: doc.passwordSaltHex, hashHex: doc.passwordHashHex },
+  };
+}
+
+export async function updateUserPassword(
+  userId: string,
+  passwordSaltHex: string,
+  passwordHashHex: string,
+): Promise<void> {
+  const db = await getMongoDb();
+  const oid = new ObjectId(userId);
+  const now = new Date().toISOString();
+  const r = await db.collection(COL).updateOne(
+    { _id: oid },
+    { $set: { passwordSaltHex, passwordHashHex, updatedAt: now } },
+  );
+  if (r.matchedCount === 0) throw new Error("User not found");
+}
+
 export async function createUser(input: {
   name: string;
   email: string;

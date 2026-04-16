@@ -2,11 +2,18 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { SESSION_COOKIE_NAME, SESSION_DAYS } from "@/lib/constants";
+import { getCurrentUser } from "@/lib/auth";
 import { hashPassword, newToken, verifyPassword } from "@/lib/crypto";
 import { createSession, deleteSessionByToken } from "@/services/sessionService";
-import { createUser, getUserAuthByEmail } from "@/services/userService";
+import {
+  createUser,
+  getUserAuthByEmail,
+  getUserAuthById,
+  updateUserPassword,
+} from "@/services/userService";
 import type { ActionResult } from "@/types/actions";
 import type { User } from "@/types/models";
 import type { UserRole } from "@/types/domain";
@@ -28,6 +35,21 @@ const registerSchema = z.object({
   role: z.enum(["ENGINEER", "RESIDENT"]),
   password: passwordSchema,
 });
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Indica tu contraseña actual"),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, "Confirma la nueva contraseña"),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "Las contraseñas nuevas no coinciden",
+    path: ["confirmPassword"],
+  })
+  .refine((d) => d.currentPassword !== d.newPassword, {
+    message: "La nueva contraseña debe ser distinta de la actual",
+    path: ["newPassword"],
+  });
 
 function expiresAtIso(days: number) {
   const d = new Date();
@@ -143,6 +165,57 @@ export async function logoutAction(): Promise<void> {
   if (token) await deleteSessionByToken(token);
   store.delete(SESSION_COOKIE_NAME);
   redirect("/login");
+}
+
+export async function changePasswordAction(
+  _prevState: unknown,
+  formData: FormData,
+): Promise<ActionResult<{ updated: true }>> {
+  const raw = {
+    currentPassword: String(formData.get("currentPassword") ?? ""),
+    newPassword: String(formData.get("newPassword") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
+  };
+
+  const parsed = changePasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { message: "Revisa los campos", fieldErrors: flattenZod(parsed.error) },
+    };
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: { message: "Sesión no válida" } };
+  }
+
+  const auth = await getUserAuthById(user.id);
+  if (!auth) {
+    return { ok: false, error: { message: "Usuario no encontrado" } };
+  }
+
+  const currentOk = await verifyPassword(parsed.data.currentPassword, {
+    algorithm: "scrypt",
+    saltHex: auth.password.saltHex,
+    hashHex: auth.password.hashHex,
+  });
+  if (!currentOk) {
+    return {
+      ok: false,
+      error: {
+        message: "La contraseña actual no es correcta",
+        fieldErrors: { currentPassword: "No coincide con tu contraseña" },
+      },
+    };
+  }
+
+  const pw = await hashPassword(parsed.data.newPassword);
+  await updateUserPassword(user.id, pw.saltHex, pw.hashHex);
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+
+  return { ok: true, data: { updated: true } };
 }
 
 function flattenZod(err: z.ZodError): Record<string, string> {

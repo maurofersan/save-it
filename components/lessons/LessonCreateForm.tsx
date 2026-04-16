@@ -16,7 +16,11 @@ import styles from "./LessonCreateForm.module.css";
 
 type State = ActionResult<{ lessonId: string }> | null;
 
-export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) {
+export function LessonCreateForm({
+  specialties,
+}: {
+  specialties: Specialty[];
+}) {
   const router = useRouter();
   const didNavigate = useRef(false);
   const [state, action, pending] = useActionState<State, FormData>(
@@ -41,7 +45,8 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
           Nueva lección aprendida
         </div>
         <div className="mt-1 text-sm text-slate-300">
-          Completa los campos obligatorios y adjunta evidencia (imagen) si la tienes.
+          Completa los campos obligatorios y adjunta evidencia (imagen) si la
+          tienes.
         </div>
       </CardHeader>
       <CardBody>
@@ -49,7 +54,7 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
           <Input
             name="title"
             label="Título"
-            placeholder="Ej. Fisuras por deficiente curado"
+            placeholder="Ej. Importancia de definir criterios de aceptación"
             error={fieldErrors?.title}
             required
           />
@@ -68,7 +73,12 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
               ))}
             </Select>
 
-            <Select name="impactType" label="Impacto" defaultValue="TIME" error={fieldErrors?.impactType}>
+            <Select
+              name="impactType"
+              label="Impacto"
+              defaultValue="TIME"
+              error={fieldErrors?.impactType}
+            >
               <option value="TIME">Tiempo</option>
               <option value="COST">Costo</option>
             </Select>
@@ -92,7 +102,9 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
             <DateInput
               name="eventDate"
               label="Fecha de suceso"
-              error={(fieldErrors as Record<string, string> | undefined)?.eventDate}
+              error={
+                (fieldErrors as Record<string, string> | undefined)?.eventDate
+              }
               required
             />
           </div>
@@ -150,4 +162,3 @@ export function LessonCreateForm({ specialties }: { specialties: Specialty[] }) 
     </Card>
   );
 }
-
