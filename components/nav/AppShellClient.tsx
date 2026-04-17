@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandMark } from "@/components/brand/BrandMark";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 
@@ -49,15 +50,15 @@ function AsideContent({
     <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl border border-blue-500/20 bg-blue-600/15">
-            <span className="text-sm font-semibold text-blue-200">SI</span>
-          </div>
+          <BrandMark href="/dashboard" size="md" decorative />
           <div className="leading-tight">
             <div className="text-sm font-semibold text-slate-100">SAVE IT</div>
             <div className="text-xs text-slate-400">Lecciones Aprendidas</div>
           </div>
         </div>
-        <div className="hidden text-xs text-slate-400 sm:block">{roleLabel}</div>
+        <div className="hidden text-xs text-slate-400 sm:block">
+          {roleLabel}
+        </div>
       </div>
 
       <nav className="mt-4 flex flex-col gap-1">

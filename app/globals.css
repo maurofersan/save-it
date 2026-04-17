@@ -36,6 +36,33 @@ body {
   color: var(--foreground);
 }
 
+/* BEM: c-brand — logo on white plate (public/logo-saveit.png) */
+.c-brand__mark {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+/* Extra “air” in the asset → scale up inside the fixed box (container size unchanged). */
+.c-brand__image {
+  object-position: center;
+  transform-origin: center;
+}
+
+.c-brand__mark--sm .c-brand__image {
+  transform: scale(1.14);
+}
+
+.c-brand__mark--md .c-brand__image {
+  transform: scale(1.26);
+}
+
+.c-brand__mark--lg .c-brand__image {
+  transform: scale(1.2);
+}
+
 /* BEM-ish component blocks (used for small custom styling/animations) */
 .c-card {
   border: 1px solid var(--border);
