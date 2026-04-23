@@ -24,13 +24,13 @@ export async function AppShell({
 
   const links = [
     { href: "/dashboard", label: "Inicio" },
-    ...(safeUser?.role === "ENGINEER" ? [{ href: "/lessons/new", label: "Registrar" }] : []),
+    { href: "/profile", label: "Perfil" },
+    { href: "/lessons/new", label: "Registrar" },
     { href: "/library", label: "Visualizar" },
     ...(safeUser?.role === "RESIDENT" ? [{ href: "/validate", label: "Validar" }] : []),
     { href: "/members", label: "Miembros" },
-    { href: "/profile", label: "Perfil" },
-    { href: "/help", label: "Ayuda" },
     { href: "/settings", label: "Configuración" },
+    { href: "/help", label: "Ayuda" },
   ];
 
   const roleLabel = safeUser?.role === "RESIDENT" ? "Residente" : "Ingeniero";
@@ -50,6 +50,7 @@ export async function AppShell({
           : null
       }
       roleLabel={roleLabel}
+      notificationCount={0}
     >
       {children}
     </AppShellClient>

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -68,9 +67,39 @@ export default async function LibraryDetailPage({
             </div>
           </CardHeader>
           <CardBody className="grid gap-4">
+            {(lesson.projectName || lesson.projectType || lesson.area) && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {lesson.projectName ? (
+                  <Section title="Proyecto">{lesson.projectName}</Section>
+                ) : null}
+                {lesson.projectType ? (
+                  <Section title="Tipo de proyecto">{lesson.projectType}</Section>
+                ) : null}
+                {lesson.area ? <Section title="Área">{lesson.area}</Section> : null}
+              </div>
+            )}
+            {lesson.cargo ? (
+              <Section title="Cargo">{lesson.cargo}</Section>
+            ) : null}
+            {lesson.projectStages?.length ? (
+              <Section title="Etapa del proyecto">
+                {lesson.projectStages
+                  .map((s) => projectStageLabel(s))
+                  .join(" · ")}
+              </Section>
+            ) : null}
             <Section title="¿Qué ocurrió?">{lesson.description}</Section>
-            <Section title="Causa raíz">{lesson.rootCause}</Section>
-            <Section title="Solución">{lesson.solution}</Section>
+            <Section title="Causas">{lesson.rootCause}</Section>
+            {lesson.actionsTaken ? (
+              <Section title="Acciones tomadas">{lesson.actionsTaken}</Section>
+            ) : null}
+            {lesson.lessonLearned ? (
+              <Section title="Lección aprendida">{lesson.lessonLearned}</Section>
+            ) : null}
+            <Section title="Resumen / solución">{lesson.solution}</Section>
+            {lesson.actionPlan ? (
+              <Section title="Plan de acción">{lesson.actionPlan}</Section>
+            ) : null}
             <div className="grid gap-3 sm:grid-cols-2">
               <Section title="Fecha de suceso">
                 {lesson.eventDate
@@ -78,8 +107,10 @@ export default async function LibraryDetailPage({
                   : "—"}
               </Section>
               <Section title="Impacto">
-                {lesson.impactType === "TIME" ? "Tiempo" : "Costo"} ·{" "}
-                {lesson.impactValue}
+                {lesson.impactKinds
+                  .map((k) => (k === "TIME" ? "Tiempo" : "Costo"))
+                  .join(" · ")}{" "}
+                · Valor: {lesson.impactValue}
               </Section>
               <Section title="Métricas">
                 {lesson.viewsCount} vistas ·{" "}
@@ -95,7 +126,7 @@ export default async function LibraryDetailPage({
               Evidencias
             </div>
             <div className="mt-1 text-sm text-slate-400">
-              Fotos adjuntas a la lección.
+              Archivos adjuntos (imágenes o documentos).
             </div>
           </CardHeader>
           <CardBody>
@@ -103,25 +134,40 @@ export default async function LibraryDetailPage({
               <div className="text-sm text-slate-300">Sin evidencias.</div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {evidence.map((e) => (
-                  <a
-                    key={e.id}
-                    href={e.url}
-                    className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="relative aspect-video w-full">
-                      <Image
-                        src={e.url}
-                        alt="Evidencia"
-                        fill
-                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                        className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                      />
-                    </div>
-                  </a>
-                ))}
+                {evidence.map((e) =>
+                  e.type === "DOCUMENT" ? (
+                    <a
+                      key={e.id}
+                      href={e.url}
+                      className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-blue-200 transition hover:bg-white/10"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="text-2xl" aria-hidden>
+                        📎
+                      </span>
+                      <span className="font-medium">Ver o descargar documento</span>
+                      <span className="break-all text-xs text-slate-400">{e.url}</span>
+                    </a>
+                  ) : (
+                    <a
+                      key={e.id}
+                      href={e.url}
+                      className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <div className="relative aspect-video w-full">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={e.url}
+                          alt="Evidencia"
+                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                    </a>
+                  ),
+                )}
               </div>
             )}
           </CardBody>
@@ -129,6 +175,21 @@ export default async function LibraryDetailPage({
       </div>
     </AppShell>
   );
+}
+
+function projectStageLabel(key: string): string {
+  switch (key) {
+    case "LICITACION":
+      return "Licitación";
+    case "INICIO":
+      return "Inicio";
+    case "EJECUCION":
+      return "Ejecución";
+    case "FINALIZACION":
+      return "Finalización";
+    default:
+      return key;
+  }
 }
 
 function Section({

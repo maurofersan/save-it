@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { uploadLessonAttachment } from "@/lib/cloudinary";
 import { addEvidence } from "@/services/evidenceService";
 import {
   createLesson,
@@ -13,35 +14,68 @@ import {
   setLessonStatus,
   upsertLessonRating,
 } from "@/services/lessonService";
+import { getOrganizationById } from "@/services/organizationService";
 import { listSpecialties } from "@/services/specialtyService";
 import type { ActionResult } from "@/types/actions";
-import type { LessonStatus, SpecialtyKey } from "@/types/domain";
+import type {
+  ImpactType,
+  LessonStatus,
+  ProjectStageKey,
+  SpecialtyKey,
+} from "@/types/domain";
 import type { Lesson, LessonWithSpecialty, Specialty } from "@/types/models";
-import { uploadImage } from "@/lib/cloudinary";
+
+const STAGE_KEYS = [
+  "LICITACION",
+  "INICIO",
+  "EJECUCION",
+  "FINALIZACION",
+] as const satisfies readonly ProjectStageKey[];
 
 const createLessonSchema = z.object({
-  title: z.string().trim().min(5, "Título muy corto").max(140),
+  projectName: z.string().trim().min(2, "Proyecto muy corto").max(200),
+  projectType: z.string().trim().min(2, "Tipo muy corto").max(200),
+  area: z.string().trim().min(2, "Área muy corta").max(200),
+  cargo: z.string().trim().min(2, "Cargo muy corto").max(120),
+  title: z.string().trim().min(5, "Nombre muy corto").max(140),
   specialtyKey: z.enum(["QUALITY", "SAFETY", "PRODUCTION"]),
-  description: z.string().trim().min(10, "Descripción muy corta").max(4000),
-  rootCause: z.string().trim().min(5, "Causa raíz muy corta").max(2000),
-  solution: z.string().trim().min(5, "Solución muy corta").max(2000),
+  projectStages: z
+    .array(z.enum(STAGE_KEYS))
+    .min(1, "Selecciona al menos una etapa del proyecto"),
+  description: z.string().trim().min(10, "Texto muy corto").max(4000),
+  rootCause: z.string().trim().min(10, "Texto muy corto").max(2000),
+  actionsTaken: z.string().trim().min(10, "Texto muy corto").max(4000),
+  lessonLearned: z.string().trim().min(10, "Texto muy corto").max(4000),
+  actionPlan: z.string().trim().max(4000),
   eventDate: z
     .string()
     .trim()
     .min(1, "Fecha de suceso requerida")
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
-  impactType: z.enum(["TIME", "COST"]),
+  impactKinds: z
+    .array(z.enum(["TIME", "COST"]))
+    .min(1, "Marca al menos tiempo o costo"),
   impactValue: z.coerce.number().min(0).max(1_000_000),
 });
 
 export async function getLessonFormData(): Promise<{
   specialties: Specialty[];
+  organizationLogoUrl: string | null;
+  organizationName: string;
+  canCreateLesson: boolean;
 }> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!user.organizationId) redirect("/login");
-  if (user.role !== "ENGINEER") redirect("/dashboard");
-  return { specialties: await listSpecialties() };
+
+  const org = await getOrganizationById(user.organizationId);
+
+  return {
+    specialties: await listSpecialties(),
+    organizationLogoUrl: org?.logoUrl ?? null,
+    organizationName: org?.name ?? "Empresa",
+    canCreateLesson: user.role === "ENGINEER",
+  };
 }
 
 export async function createLessonAction(
@@ -57,14 +91,37 @@ export async function createLessonAction(
     return { ok: false, error: { message: "Solo ingenieros pueden registrar lecciones" } };
   }
 
+  const projectStages = formData
+    .getAll("projectStages")
+    .map(String)
+    .filter((s): s is ProjectStageKey =>
+      (STAGE_KEYS as readonly string[]).includes(s),
+    );
+
+  const impactKinds = [
+    ...new Set(
+      formData
+        .getAll("impactKind")
+        .map(String)
+        .filter((s): s is ImpactType => s === "TIME" || s === "COST"),
+    ),
+  ];
+
   const raw = {
+    projectName: String(formData.get("projectName") ?? ""),
+    projectType: String(formData.get("projectType") ?? ""),
+    area: String(formData.get("area") ?? ""),
+    cargo: String(formData.get("cargo") ?? ""),
     title: String(formData.get("title") ?? ""),
     specialtyKey: String(formData.get("specialtyKey") ?? ""),
+    projectStages,
     description: String(formData.get("description") ?? ""),
     rootCause: String(formData.get("rootCause") ?? ""),
-    solution: String(formData.get("solution") ?? ""),
+    actionsTaken: String(formData.get("actionsTaken") ?? ""),
+    lessonLearned: String(formData.get("lessonLearned") ?? ""),
+    actionPlan: String(formData.get("actionPlan") ?? ""),
     eventDate: String(formData.get("eventDate") ?? ""),
-    impactType: String(formData.get("impactType") ?? ""),
+    impactKinds,
     impactValue: formData.get("impactValue") ?? 0,
   };
 
@@ -89,24 +146,49 @@ export async function createLessonAction(
     title: parsed.data.title,
     specialtyId: specialty.id,
     organizationId: user.organizationId,
+    projectName: parsed.data.projectName,
+    projectType: parsed.data.projectType,
+    area: parsed.data.area,
+    cargo: parsed.data.cargo,
+    projectStages: parsed.data.projectStages,
     description: parsed.data.description,
     rootCause: parsed.data.rootCause,
-    solution: parsed.data.solution,
+    actionsTaken: parsed.data.actionsTaken,
+    lessonLearned: parsed.data.lessonLearned,
+    actionPlan: parsed.data.actionPlan,
+    solution: parsed.data.lessonLearned,
     eventDate: parsed.data.eventDate,
-    impactType: parsed.data.impactType as Lesson["impactType"],
+    impactKinds: parsed.data.impactKinds,
     impactValue: parsed.data.impactValue,
     createdBy: user.id,
   });
 
   const evidenceFile = formData.get("evidence") as File | null;
   if (evidenceFile && evidenceFile.size > 0) {
-    const savedUrl = await saveEvidenceImage(evidenceFile, lesson.id);
-    await addEvidence({
-      lessonId: lesson.id,
-      organizationId: user.organizationId,
-      type: "IMAGE",
-      url: savedUrl,
-    });
+    try {
+      assertAllowedEvidence(evidenceFile);
+      const ext =
+        evidenceFile.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "") ||
+        "bin";
+      const baseName = `lesson-${lesson.id}-${Date.now()}.${ext}`;
+      const { url, isImage } = await uploadLessonAttachment(
+        evidenceFile,
+        baseName,
+      );
+      await addEvidence({
+        lessonId: lesson.id,
+        organizationId: user.organizationId,
+        type: isImage ? "IMAGE" : "DOCUMENT",
+        url,
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Error al subir el archivo";
+      return {
+        ok: false,
+        error: { message },
+      };
+    }
   }
 
   revalidatePath("/dashboard");
@@ -220,37 +302,38 @@ export async function searchLibrary(input: {
   });
 }
 
-async function saveEvidenceImage(
-  file: File,
-  lessonId: string,
-): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("La evidencia debe ser una imagen");
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error("La imagen supera el límite de 5MB");
-  }
+const DOC_MIMES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
 
-  const ext = guessExtension(file.type) ?? "png";
-  const baseName = `lesson-${lessonId}-${Date.now()}.${ext}`;
-
-  try {
-    return await uploadImage(file, baseName);
-  } catch (error: unknown) {
-    const details =
-      error instanceof Error ? error.message : "Unknown upload error";
-    throw new Error(
-      `No se pudo subir la imagen. Intenta nuevamente más tarde. (${details})`,
-    );
+function assertAllowedEvidence(file: File): void {
+  const imageOk =
+    file.type === "image/png" ||
+    file.type === "image/jpeg" ||
+    file.type === "image/webp";
+  if (imageOk) {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("La imagen supera el límite de 5MB");
+    }
+    return;
   }
-}
-
-function guessExtension(mime: string): string | null {
-  if (mime === "image/png") return "png";
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/webp") return "webp";
-  if (mime === "image/gif") return "gif";
-  return null;
+  if (DOC_MIMES.has(file.type)) {
+    if (file.size > 15 * 1024 * 1024) {
+      throw new Error("El documento supera el límite de 15MB");
+    }
+    return;
+  }
+  const lower = file.name.toLowerCase();
+  if (/\.(pdf|doc|docx|xls|xlsx)$/.test(lower) && file.size <= 15 * 1024 * 1024) {
+    return;
+  }
+  throw new Error(
+    "Formato no permitido. Usa PNG, JPG, WEBP, PDF, Word o Excel.",
+  );
 }
 
 function flattenZod(err: z.ZodError): Record<string, string> {

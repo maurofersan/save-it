@@ -13,11 +13,17 @@ export default async function NewLessonPage() {
   if (!user) redirect("/login");
   if (!user.organizationId) redirect("/login");
 
-  const { specialties } = await getLessonFormData();
+  const { specialties, organizationLogoUrl, organizationName, canCreateLesson } =
+    await getLessonFormData();
 
   return (
     <AppShell activePath="/lessons/new">
-      <LessonCreateForm specialties={specialties} />
+      <LessonCreateForm
+        specialties={specialties}
+        organizationLogoUrl={organizationLogoUrl}
+        organizationName={organizationName}
+        canCreateLesson={canCreateLesson}
+      />
     </AppShell>
   );
 }

@@ -1,13 +1,51 @@
 import { ObjectId } from "mongodb";
 import { getMongoDb } from "@/lib/mongo";
 import { getSpecialtyLabel } from "@/lib/specialtyLabels";
-import type { LessonStatus } from "@/types/domain";
+import type { ImpactType, LessonStatus, ProjectStageKey } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty } from "@/types/models";
 
 const LESSONS = "lessons";
 const SPECIALTIES = "specialties";
 const USERS = "users";
 const RATINGS = "lesson_ratings";
+
+const STAGE_KEYS: ProjectStageKey[] = [
+  "LICITACION",
+  "INICIO",
+  "EJECUCION",
+  "FINALIZACION",
+];
+
+const LESSON_FULL_PROJECTION = {
+  _id: 1,
+  title: 1,
+  specialtyId: 1,
+  organizationId: 1,
+  description: 1,
+  rootCause: 1,
+  solution: 1,
+  eventDate: 1,
+  impactType: 1,
+  impactKinds: 1,
+  impactValue: 1,
+  projectName: 1,
+  projectType: 1,
+  area: 1,
+  cargo: 1,
+  projectStages: 1,
+  actionsTaken: 1,
+  lessonLearned: 1,
+  actionPlan: 1,
+  status: 1,
+  reviewerComment: 1,
+  createdBy: 1,
+  createdAt: 1,
+  updatedAt: 1,
+  validatedAt: 1,
+  viewsCount: 1,
+  ratingCount: 1,
+  ratingAvg: 1,
+} as const;
 
 type LessonDoc = {
   _id: ObjectId;
@@ -19,7 +57,16 @@ type LessonDoc = {
   solution: string;
   eventDate: string | null;
   impactType: Lesson["impactType"];
+  impactKinds?: ImpactType[] | null;
   impactValue: number;
+  projectName?: string | null;
+  projectType?: string | null;
+  area?: string | null;
+  cargo?: string | null;
+  projectStages?: string[] | null;
+  actionsTaken?: string | null;
+  lessonLearned?: string | null;
+  actionPlan?: string | null;
   status: LessonStatus;
   reviewerComment: string | null;
   createdBy: ObjectId;
@@ -31,17 +78,48 @@ type LessonDoc = {
   ratingAvg: number;
 };
 
+function normalizeProjectStages(raw: unknown): ProjectStageKey[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (x): x is ProjectStageKey =>
+      typeof x === "string" && STAGE_KEYS.includes(x as ProjectStageKey),
+  );
+}
+
+function normalizeImpactKinds(doc: LessonDoc): ImpactType[] {
+  if (Array.isArray(doc.impactKinds) && doc.impactKinds.length) {
+    const kinds = doc.impactKinds.filter(
+      (x): x is ImpactType => x === "TIME" || x === "COST",
+    );
+    if (kinds.length) return [...new Set(kinds)];
+  }
+  if (doc.impactType === "TIME" || doc.impactType === "COST") {
+    return [doc.impactType];
+  }
+  return ["TIME"];
+}
+
 function mapLesson(doc: LessonDoc): Lesson {
+  const impactKinds = normalizeImpactKinds(doc);
   return {
     id: doc._id.toHexString(),
     title: doc.title,
     specialtyId: doc.specialtyId.toHexString(),
     organizationId: doc.organizationId.toHexString(),
+    projectName: doc.projectName ?? null,
+    projectType: doc.projectType ?? null,
+    area: doc.area ?? null,
+    cargo: doc.cargo ?? null,
+    projectStages: normalizeProjectStages(doc.projectStages),
     description: doc.description,
     rootCause: doc.rootCause,
+    actionsTaken: doc.actionsTaken ?? null,
+    lessonLearned: doc.lessonLearned ?? null,
+    actionPlan: doc.actionPlan ?? null,
     solution: doc.solution,
     eventDate: doc.eventDate,
-    impactType: doc.impactType,
+    impactKinds,
+    impactType: impactKinds[0] ?? "TIME",
     impactValue: doc.impactValue,
     status: doc.status,
     reviewerComment: doc.reviewerComment,
@@ -59,11 +137,19 @@ export async function createLesson(input: {
   title: string;
   specialtyId: string;
   organizationId: string;
+  projectName: string;
+  projectType: string;
+  area: string;
+  cargo: string;
+  projectStages: ProjectStageKey[];
   description: string;
   rootCause: string;
+  actionsTaken: string;
+  lessonLearned: string;
+  actionPlan: string;
   solution: string;
   eventDate: string | null;
-  impactType: Lesson["impactType"];
+  impactKinds: ImpactType[];
   impactValue: number;
   createdBy: string;
 }): Promise<Lesson> {
@@ -73,11 +159,20 @@ export async function createLesson(input: {
     title: input.title,
     specialtyId: new ObjectId(input.specialtyId),
     organizationId: new ObjectId(input.organizationId),
+    projectName: input.projectName,
+    projectType: input.projectType,
+    area: input.area,
+    cargo: input.cargo,
+    projectStages: input.projectStages,
     description: input.description,
     rootCause: input.rootCause,
+    actionsTaken: input.actionsTaken,
+    lessonLearned: input.lessonLearned,
+    actionPlan: input.actionPlan,
     solution: input.solution,
     eventDate: input.eventDate,
-    impactType: input.impactType,
+    impactKinds: input.impactKinds,
+    impactType: input.impactKinds[0] ?? "TIME",
     impactValue: input.impactValue,
     status: "RECEIVED",
     reviewerComment: null,
@@ -171,25 +266,7 @@ export async function getValidatedLessonWithSpecialtyById(
       { $unwind: "$u" },
       {
         $project: {
-          _id: 1,
-          title: 1,
-          specialtyId: 1,
-          organizationId: 1,
-          description: 1,
-          rootCause: 1,
-          solution: 1,
-          eventDate: 1,
-          impactType: 1,
-          impactValue: 1,
-          status: 1,
-          reviewerComment: 1,
-          createdBy: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          validatedAt: 1,
-          viewsCount: 1,
-          ratingCount: 1,
-          ratingAvg: 1,
+          ...LESSON_FULL_PROJECTION,
           specialty_key: "$s.key",
           created_by_name: "$u.name",
           created_by_email: "$u.email",
@@ -369,25 +446,7 @@ export async function listLessonsForValidation(filters: {
 
   pipeline.push({
     $project: {
-      _id: 1,
-      title: 1,
-      specialtyId: 1,
-      organizationId: 1,
-      description: 1,
-      rootCause: 1,
-      solution: 1,
-      eventDate: 1,
-      impactType: 1,
-      impactValue: 1,
-      status: 1,
-      reviewerComment: 1,
-      createdBy: 1,
-      createdAt: 1,
-      updatedAt: 1,
-      validatedAt: 1,
-      viewsCount: 1,
-      ratingCount: 1,
-      ratingAvg: 1,
+      ...LESSON_FULL_PROJECTION,
       specialty_key: "$s.key",
       created_by_name: "$u.name",
       created_by_email: "$u.email",
@@ -460,6 +519,11 @@ export async function searchValidatedLessons(filters: {
         { description: { $regex: rx, $options: "i" } },
         { rootCause: { $regex: rx, $options: "i" } },
         { solution: { $regex: rx, $options: "i" } },
+        { projectName: { $regex: rx, $options: "i" } },
+        { projectType: { $regex: rx, $options: "i" } },
+        { area: { $regex: rx, $options: "i" } },
+        { lessonLearned: { $regex: rx, $options: "i" } },
+        { actionsTaken: { $regex: rx, $options: "i" } },
       ],
     });
   }
@@ -469,25 +533,7 @@ export async function searchValidatedLessons(filters: {
   pipeline.push({ $limit: 100 });
   pipeline.push({
     $project: {
-      _id: 1,
-      title: 1,
-      specialtyId: 1,
-      organizationId: 1,
-      description: 1,
-      rootCause: 1,
-      solution: 1,
-      eventDate: 1,
-      impactType: 1,
-      impactValue: 1,
-      status: 1,
-      reviewerComment: 1,
-      createdBy: 1,
-      createdAt: 1,
-      updatedAt: 1,
-      validatedAt: 1,
-      viewsCount: 1,
-      ratingCount: 1,
-      ratingAvg: 1,
+      ...LESSON_FULL_PROJECTION,
       specialty_key: "$s.key",
       created_by_name: "$u.name",
       created_by_email: "$u.email",

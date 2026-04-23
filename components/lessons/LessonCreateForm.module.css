@@ -10,3 +10,108 @@
   }
 }
 
+.orgLogoRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.orgLogo {
+  max-height: 4.5rem;
+  max-width: 220px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.5rem 0.75rem;
+}
+
+.orgLogoPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 280px;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.75rem 1rem;
+}
+
+.orgLogoPlaceholderTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(226 232 240);
+}
+
+.orgLogoPlaceholderHint {
+  font-size: 0.7rem;
+  line-height: 1.2rem;
+  color: rgb(148 163 184);
+}
+
+.fieldGroupTitle {
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgb(148 163 184);
+}
+
+.formGrid4 {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .formGrid4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.formGrid3 {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .formGrid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.formSplit {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .formSplit {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.formStages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  color: rgb(203 213 225);
+  cursor: pointer;
+}
+
+.checkboxLabel input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: rgb(37 99 235);
+}
+

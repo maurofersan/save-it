@@ -8,7 +8,7 @@ type EvidenceDoc = {
   _id: ObjectId;
   lessonId: ObjectId;
   organizationId: ObjectId;
-  type: Evidence["type"];
+  type?: Evidence["type"];
   url: string;
   createdAt: string;
 };
@@ -18,7 +18,7 @@ function mapEvidence(doc: EvidenceDoc): Evidence {
     id: doc._id.toHexString(),
     lessonId: doc.lessonId.toHexString(),
     organizationId: doc.organizationId.toHexString(),
-    type: doc.type,
+    type: doc.type === "DOCUMENT" ? "DOCUMENT" : "IMAGE",
     url: doc.url,
     createdAt: doc.createdAt,
   };

@@ -27,9 +27,13 @@ function sanitizePublicId(input: string): string {
   return base.replace(/\.[a-z0-9]+$/i, "");
 }
 
-async function uploadImageStream(
+async function uploadStream(
   buffer: Buffer,
-  opts: { folder: string; publicId: string },
+  opts: {
+    folder: string;
+    publicId: string;
+    resourceType: "image" | "raw";
+  },
 ): Promise<UploadApiResponse> {
   ensureCloudinaryConfigured();
   return await new Promise<UploadApiResponse>((resolve, reject) => {
@@ -37,7 +41,7 @@ async function uploadImageStream(
       {
         folder: opts.folder,
         public_id: opts.publicId,
-        resource_type: "image",
+        resource_type: opts.resourceType,
       },
       (error, result) => {
         if (error) return reject(error);
@@ -52,9 +56,26 @@ async function uploadImageStream(
 export async function uploadImage(image: File, baseName: string): Promise<string> {
   const imageData = await image.arrayBuffer();
   const publicId = sanitizePublicId(baseName);
-  const result = await uploadImageStream(Buffer.from(imageData), {
+  const result = await uploadStream(Buffer.from(imageData), {
     folder: "nextjs-save-it",
     publicId,
+    resourceType: "image",
   });
   return result.secure_url;
+}
+
+/** Imágenes o documentos (PDF, Office, etc.) vía `resource_type: raw`. */
+export async function uploadLessonAttachment(
+  file: File,
+  baseName: string,
+): Promise<{ url: string; isImage: boolean }> {
+  const data = await file.arrayBuffer();
+  const publicId = sanitizePublicId(baseName);
+  const isImage = file.type.startsWith("image/");
+  const result = await uploadStream(Buffer.from(data), {
+    folder: "nextjs-save-it",
+    publicId,
+    resourceType: isImage ? "image" : "raw",
+  });
+  return { url: result.secure_url, isImage };
 }

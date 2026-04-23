@@ -1,37 +1,14 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { logoutAction } from "@/actions/auth";
 import { getCurrentUser } from "@/lib/auth";
-import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import { getDashboardMetrics } from "@/services/metricsService";
 import { AppShell } from "@/components/nav/AppShell";
-import { Button } from "@/components/ui/Button";
+import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Badge";
 
 export const metadata = {
   title: "Dashboard · SAVE IT",
 };
-
-function MetricCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string | number;
-  hint: string;
-}) {
-  return (
-    <Card>
-      <CardBody>
-        <div className="text-xs text-slate-400">{label}</div>
-        <div className="mt-1 text-2xl font-semibold text-slate-50">{value}</div>
-        <div className="mt-2 text-xs text-slate-400">{hint}</div>
-      </CardBody>
-    </Card>
-  );
-}
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -42,96 +19,68 @@ export default async function DashboardPage() {
 
   return (
     <AppShell activePath="/dashboard" currentUser={user}>
-      <div className="grid gap-4 lg:gap-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm text-slate-300">Hola,</div>
-            <div className="text-2xl font-semibold tracking-tight text-slate-50">
-              {user.name}
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-start lg:gap-6">
+        <div className="grid min-w-0 gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Hola,
+              </div>
+              <div className="text-2xl font-bold uppercase tracking-tight text-slate-50 sm:text-3xl">
+                {user.name}!
+              </div>
+              <div className="mt-1 text-sm text-slate-400">
+                Rol:{" "}
+                <Pill tone="blue">
+                  {user.role === "RESIDENT" ? "Residente (revisor)" : "Ingeniero (registrador)"}
+                </Pill>
+              </div>
             </div>
-            <div className="mt-1 text-sm text-slate-400">
-              Rol:{" "}
-              <Pill tone="blue">
-                {user.role === "RESIDENT" ? "Residente (revisor)" : "Ingeniero (registrador)"}
-              </Pill>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {user.role === "ENGINEER" ? (
-              <Link href="/lessons/new">
-                <Button>Registrar lección</Button>
-              </Link>
-            ) : null}
-            <form action={logoutAction}>
-              <Button variant="secondary" type="submit">
-                Salir
-              </Button>
+            <form
+              action="/library"
+              method="get"
+              className="flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
+            >
+              <label className="sr-only" htmlFor="dash-search">
+                Buscar
+              </label>
+              <input
+                id="dash-search"
+                name="q"
+                type="search"
+                placeholder="Buscar en la biblioteca…"
+                className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/60"
+              />
+              <button
+                type="submit"
+                className="h-11 shrink-0 rounded-xl bg-blue-600 px-5 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                Buscar
+              </button>
             </form>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label="Total de lecciones"
-            value={metrics.lessonsTotal}
-            hint="Registradas en tu empresa"
-          />
-          <MetricCard
-            label="Validadas"
-            value={metrics.lessonsValidated}
-            hint="Publicadas en la biblioteca"
-          />
-          <MetricCard
-            label="En revisión"
-            value={metrics.lessonsInProgress}
-            hint="Recibidas / en proceso"
-          />
-          <MetricCard
-            label="Descartadas"
-            value={metrics.lessonsDiscarded}
-            hint="No se publican"
+          <DashboardCharts
+            specialtyBars={metrics.specialtyBars}
+            statusCounts={metrics.statusCounts}
           />
         </div>
 
-        <Card>
+        <Card className="lg:sticky lg:top-6">
           <CardHeader>
-            <div className="text-sm font-semibold text-slate-100">Tendencias por especialidad</div>
-            <div className="mt-1 text-sm text-slate-400">
-              Frecuencia de registro (resumen simple).
+            <div className="text-sm font-semibold text-slate-100">Novedades</div>
+            <div className="mt-1 text-xs text-slate-400">
+              Comentarios y actividad reciente (próximamente).
             </div>
           </CardHeader>
           <CardBody>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {metrics.topSpecialties.map((s) => (
-                <div
-                  key={s.specialtyKey}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                >
-                  <div className="text-xs text-slate-400">
-                    {getSpecialtyLabel(s.specialtyKey)}
-                  </div>
-                  <div className="mt-1 text-xl font-semibold text-slate-50">{s.count}</div>
-                  <div className="mt-3 h-2 w-full rounded-full bg-white/5">
-                    <div
-                      className="h-2 rounded-full bg-blue-600"
-                      style={{
-                        width:
-                          metrics.lessonsTotal > 0
-                            ? `${Math.round((s.count / metrics.lessonsTotal) * 100)}%`
-                            : "0%",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              {metrics.topSpecialties.length === 0 ? (
-                <div className="text-sm text-slate-400">Aún no hay lecciones registradas.</div>
-              ) : null}
-            </div>
+            <p className="text-sm text-slate-400">
+              Aquí verás avisos cuando alguien comente o actualice una lección de tu empresa. Por
+              ahora no hay novedades que mostrar.
+            </p>
           </CardBody>
         </Card>
       </div>
     </AppShell>
   );
 }
-

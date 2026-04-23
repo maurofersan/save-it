@@ -3,6 +3,7 @@ import type {
   Id,
   ImpactType,
   LessonStatus,
+  ProjectStageKey,
   SpecialtyKey,
   UserRole,
 } from "@/types/domain";
@@ -50,10 +51,26 @@ export type Lesson = {
   specialtyId: Id;
   /** Owning company (tenant). */
   organizationId: Id;
+  /** Proyecto (obra / contrato). */
+  projectName: string | null;
+  projectType: string | null;
+  area: string | null;
+  /** Cargo del autor en contexto de la lección. */
+  cargo: string | null;
+  projectStages: ProjectStageKey[];
   description: string;
   rootCause: string;
+  /** Acciones tomadas (mock). */
+  actionsTaken: string | null;
+  /** Lección aprendida explícita (mock). */
+  lessonLearned: string | null;
+  actionPlan: string | null;
+  /** Resumen legado / búsqueda; en registros nuevos suele coincidir con `lessonLearned`. */
   solution: string;
   eventDate: string | null;
+  /** Marcado en el formulario: tiempo y/o costo. */
+  impactKinds: ImpactType[];
+  /** Primera dimensión de impacto (compatibilidad con registros y vistas antiguas). */
   impactType: ImpactType;
   impactValue: number;
   status: LessonStatus;
@@ -89,5 +106,9 @@ export type DashboardMetrics = {
   lessonsInProgress: number;
   lessonsDiscarded: number;
   topSpecialties: Array<{ specialtyKey: SpecialtyKey; count: number }>;
+  /** Una fila por especialidad del catálogo (incluye conteo 0). */
+  specialtyBars: Array<{ specialtyKey: SpecialtyKey; label: string; count: number }>;
+  /** Conteos por estado de lección (misma org). */
+  statusCounts: Record<LessonStatus, number>;
 };
 

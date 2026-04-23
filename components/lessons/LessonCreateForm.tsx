@@ -16,10 +16,23 @@ import styles from "./LessonCreateForm.module.css";
 
 type State = ActionResult<{ lessonId: string }> | null;
 
+const PROJECT_STAGES: { value: string; label: string }[] = [
+  { value: "LICITACION", label: "Licitación" },
+  { value: "INICIO", label: "Inicio" },
+  { value: "EJECUCION", label: "Ejecución" },
+  { value: "FINALIZACION", label: "Finalización" },
+];
+
 export function LessonCreateForm({
   specialties,
+  organizationLogoUrl,
+  organizationName,
+  canCreateLesson,
 }: {
   specialties: Specialty[];
+  organizationLogoUrl: string | null;
+  organizationName: string;
+  canCreateLesson: boolean;
 }) {
   const router = useRouter();
   const didNavigate = useRef(false);
@@ -31,35 +44,93 @@ export function LessonCreateForm({
   useEffect(() => {
     if (!state?.ok || didNavigate.current) return;
     didNavigate.current = true;
-    // createLessonAction already revalidatePath("/dashboard"); extra refresh() duplicated work.
     router.push("/dashboard");
   }, [state, router]);
 
   const fieldErrors = state && !state.ok ? state.error.fieldErrors : undefined;
+
+  if (!canCreateLesson) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="text-sm font-semibold text-blue-200">Registrar</div>
+          <div className="mt-1 text-xl font-semibold text-slate-50">
+            Formato de lecciones aprendidas
+          </div>
+          <div className="mt-1 text-sm text-slate-300">
+            Esta sección está disponible en el menú, pero solo los ingenieros
+            pueden enviar nuevas lecciones.
+          </div>
+        </CardHeader>
+        <CardBody className="flex flex-col gap-4">
+          <p className="text-sm leading-6 text-slate-300">
+            Tu usuario tiene rol de residente. Puedes revisar y validar lecciones
+            en <span className="text-slate-100">Validar</span> cuando corresponda.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={() => router.push("/dashboard")}>
+              Volver al inicio
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push("/validate")}
+            >
+              Ir a validar
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className="text-sm font-semibold text-blue-200">Registrar</div>
         <div className="mt-1 text-xl font-semibold text-slate-50">
-          Nueva lección aprendida
+          Formato de lecciones aprendidas
         </div>
         <div className="mt-1 text-sm text-slate-300">
-          Completa los campos obligatorios y adjunta evidencia (imagen) si la
-          tienes.
+          Completa los campos y adjunta evidencia (imagen o documento) si aplica.
         </div>
       </CardHeader>
       <CardBody>
-        <form action={action} className="grid gap-4">
-          <Input
-            name="title"
-            label="Título"
-            placeholder="Ej. Importancia de definir criterios de aceptación"
-            error={fieldErrors?.title}
-            required
-          />
+        <form action={action} className="grid gap-5">
+          <div className={styles.orgLogoRow}>
+            {organizationLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={organizationLogoUrl}
+                alt={`Logo de ${organizationName}`}
+                className={styles.orgLogo}
+              />
+            ) : (
+              <div className={styles.orgLogoPlaceholder}>
+                <span className={styles.orgLogoPlaceholderTitle}>Logo empresa</span>
+                <span className={styles.orgLogoPlaceholderHint}>
+                  Configura el logo en ajustes de la organización para mostrarlo
+                  aquí.
+                </span>
+              </div>
+            )}
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={styles.formGrid4}>
+            <Input
+              name="projectName"
+              label="Proyecto"
+              placeholder="Nombre del proyecto u obra"
+              error={fieldErrors?.projectName}
+              required
+            />
+            <Input
+              name="projectType"
+              label="Tipo de proyecto"
+              placeholder="Ej. Infraestructura, edificación"
+              error={fieldErrors?.projectType}
+              required
+            />
             <Select
               name="specialtyKey"
               label="Especialidad"
@@ -72,70 +143,125 @@ export function LessonCreateForm({
                 </option>
               ))}
             </Select>
-
-            <Select
-              name="impactType"
-              label="Impacto"
-              defaultValue="TIME"
-              error={fieldErrors?.impactType}
-            >
-              <option value="TIME">Tiempo</option>
-              <option value="COST">Costo</option>
-            </Select>
+            <Input
+              name="area"
+              label="Área"
+              placeholder="Ej. Obra, oficina técnica"
+              error={fieldErrors?.area}
+              required
+            />
           </div>
 
-          <div
-            className={[
-              styles.lessonCreateForm__row,
-              styles["lessonCreateForm__row--two"],
-            ].join(" ")}
-          >
+          <div className={styles.formGrid3}>
             <Input
-              name="impactValue"
-              label="Valor del impacto"
-              type="number"
-              step="0.01"
-              placeholder="0"
-              error={fieldErrors?.impactValue}
+              name="title"
+              label="Nombre de la lección"
+              placeholder="Título breve de la lección"
+              error={fieldErrors?.title}
+              required
+            />
+            <Input
+              name="cargo"
+              label="Cargo"
+              placeholder="Tu cargo o rol"
+              error={fieldErrors?.cargo}
               required
             />
             <DateInput
               name="eventDate"
               label="Fecha de suceso"
-              error={
-                (fieldErrors as Record<string, string> | undefined)?.eventDate
-              }
+              error={fieldErrors?.eventDate}
               required
             />
           </div>
 
-          <Textarea
-            name="description"
-            label="¿Qué ocurrió?"
-            placeholder="Describe el hecho o evento relevante."
-            error={fieldErrors?.description}
-            required
-          />
-          <Textarea
-            name="rootCause"
-            label="¿Por qué ocurrió? (Causa raíz)"
-            placeholder="Identifica la causa raíz del evento."
-            error={fieldErrors?.rootCause}
-            required
-          />
-          <Textarea
-            name="solution"
-            label="¿Qué solución se aplicó?"
-            placeholder="Acción correctiva o medida implementada."
-            error={fieldErrors?.solution}
-            required
-          />
+          <div>
+            <div className={styles.fieldGroupTitle}>Etapa del proyecto</div>
+            <div className={styles.formStages} role="group" aria-label="Etapa del proyecto">
+              {PROJECT_STAGES.map((s) => (
+                <label key={s.value} className={styles.checkboxLabel}>
+                  <input type="checkbox" name="projectStages" value={s.value} />
+                  <span>{s.label}</span>
+                </label>
+              ))}
+            </div>
+            {fieldErrors?.projectStages ? (
+              <p className="mt-1 text-xs text-red-300">{fieldErrors.projectStages}</p>
+            ) : null}
+          </div>
+
+          <div className={styles.formGrid3}>
+            <Textarea
+              name="description"
+              label="¿Qué sucedió?"
+              placeholder="Describe el hecho o evento relevante."
+              error={fieldErrors?.description}
+              required
+            />
+            <Textarea
+              name="rootCause"
+              label="¿Cuáles fueron las causas?"
+              placeholder="Identifica las causas."
+              error={fieldErrors?.rootCause}
+              required
+            />
+            <Textarea
+              name="actionsTaken"
+              label="¿Qué acciones se tomaron?"
+              placeholder="Acciones correctivas o contención."
+              error={fieldErrors?.actionsTaken}
+              required
+            />
+          </div>
+
+          <div className={styles.formSplit}>
+            <div className="grid gap-4">
+              <div>
+                <div className={styles.fieldGroupTitle}>¿Cuál fue el impacto?</div>
+                <div className={styles.formStages}>
+                  <label className={styles.checkboxLabel}>
+                    <input type="checkbox" name="impactKind" value="TIME" />
+                    <span>Tiempo</span>
+                  </label>
+                  <label className={styles.checkboxLabel}>
+                    <input type="checkbox" name="impactKind" value="COST" />
+                    <span>Costo</span>
+                  </label>
+                </div>
+                {fieldErrors?.impactKinds ? (
+                  <p className="mt-1 text-xs text-red-300">{fieldErrors.impactKinds}</p>
+                ) : null}
+              </div>
+              <Input
+                name="impactValue"
+                label="Valor del impacto"
+                type="number"
+                step="0.01"
+                placeholder="0"
+                error={fieldErrors?.impactValue}
+                required
+              />
+              <Textarea
+                name="actionPlan"
+                label="Plan de acción"
+                placeholder="Medidas a seguir para evitar recurrencia."
+                error={fieldErrors?.actionPlan}
+              />
+            </div>
+            <Textarea
+              name="lessonLearned"
+              label="¿Cuál es la lección aprendida?"
+              placeholder="Síntesis de la lección para el equipo."
+              error={fieldErrors?.lessonLearned}
+              required
+              className="min-h-[220px]"
+            />
+          </div>
 
           <ImagePicker
             name="evidence"
-            label="Evidencia (imagen)"
-            accept="image/png, image/jpeg, image/webp"
-            hint="Máx. 5MB · PNG/JPG/WEBP"
+            label="Adjuntar archivo (evidencia)"
+            mode="attachment"
           />
 
           {state && !state.ok ? (
@@ -144,10 +270,7 @@ export function LessonCreateForm({
             </div>
           ) : null}
 
-          <div className="flex items-center gap-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? "Guardando..." : "Guardar"}
-            </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               type="button"
               variant="secondary"
@@ -155,6 +278,9 @@ export function LessonCreateForm({
               onClick={() => router.push("/dashboard")}
             >
               Cancelar
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Subiendo…" : "Subir"}
             </Button>
           </div>
         </form>

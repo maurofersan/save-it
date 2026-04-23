@@ -6,6 +6,7 @@
  */
 import crypto from "node:crypto";
 import { MongoClient } from "mongodb";
+import { ensureUserEmailUniqueIndex } from "./ensureUserEmailUniqueIndex";
 
 async function run() {
   const uri = process.env.MONGODB_URI;
@@ -16,6 +17,7 @@ async function run() {
   await client.connect();
   try {
     const db = client.db(dbName);
+    await ensureUserEmailUniqueIndex(db);
 
     const specialties = db.collection("specialties");
     for (const [key, name] of [
