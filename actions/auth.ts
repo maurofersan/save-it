@@ -8,15 +8,9 @@ import { SESSION_COOKIE_NAME, SESSION_DAYS } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/auth";
 import { hashPassword, newToken, verifyPassword } from "@/lib/crypto";
 import { createSession, deleteSessionByToken } from "@/services/sessionService";
-import {
-  createUser,
-  getUserAuthByEmail,
-  getUserAuthById,
-  updateUserPassword,
-} from "@/services/userService";
+import { getUserAuthByEmail, getUserAuthById, updateUserPassword } from "@/services/userService";
 import type { ActionResult } from "@/types/actions";
 import type { User } from "@/types/models";
-import type { UserRole } from "@/types/domain";
 
 const emailSchema = z.string().trim().toLowerCase().email();
 const passwordSchema = z
@@ -26,13 +20,6 @@ const passwordSchema = z
 
 const loginSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
-});
-
-const registerSchema = z.object({
-  name: z.string().trim().min(2, "Nombre muy corto").max(80),
-  email: emailSchema,
-  role: z.enum(["ENGINEER", "RESIDENT"]),
   password: passwordSchema,
 });
 
@@ -82,45 +69,17 @@ function setSessionCookie(token: string) {
 
 export async function registerAction(
   _prevState: unknown,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<ActionResult<User>> {
-  const raw = {
-    name: String(formData.get("name") ?? ""),
-    email: String(formData.get("email") ?? ""),
-    role: String(formData.get("role") ?? "ENGINEER"),
-    password: String(formData.get("password") ?? ""),
+  void _prevState;
+  void _formData;
+  return {
+    ok: false,
+    error: {
+      message:
+        "El registro abierto no está habilitado. Tu revisor (residente) crea las cuentas del personal de la empresa.",
+    },
   };
-
-  const parsed = registerSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: { message: "Datos inválidos", fieldErrors: flattenZod(parsed.error) },
-    };
-  }
-
-  const existing = await getUserAuthByEmail(parsed.data.email);
-  if (existing) {
-    return {
-      ok: false,
-      error: { message: "El correo ya está registrado", fieldErrors: { email: "Ya existe" } },
-    };
-  }
-
-  const pw = await hashPassword(parsed.data.password);
-  const user = await createUser({
-    name: parsed.data.name,
-    email: parsed.data.email,
-    role: parsed.data.role as UserRole,
-    passwordSaltHex: pw.saltHex,
-    passwordHashHex: pw.hashHex,
-  });
-
-  const token = newToken(32);
-  await createSession({ userId: user.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });
-  await setSessionCookie(token);
-
-  redirect(safeRedirectPath(formData.get("next")));
 }
 
 export async function loginAction(
@@ -151,6 +110,16 @@ export async function loginAction(
     hashHex: userAuth.password.hashHex,
   });
   if (!ok) return { ok: false, error: { message: "Credenciales inválidas" } };
+
+  if (!userAuth.organizationId) {
+    return {
+      ok: false,
+      error: {
+        message:
+          "Tu cuenta no está asignada a una empresa. Contacta al administrador o al residente de tu organización.",
+      },
+    };
+  }
 
   const token = newToken(32);
   await createSession({ userId: userAuth.id, token, expiresAtIso: expiresAtIso(SESSION_DAYS) });

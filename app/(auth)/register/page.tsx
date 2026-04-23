@@ -1,15 +1,10 @@
-import { RegisterForm } from "@/components/auth/RegisterForm";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Registro · SAVE IT",
 };
 
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string }>;
-}) {
-  const sp = await searchParams;
-  return <RegisterForm next={sp.next} />;
+export default function RegisterPage() {
+  redirect("/login");
 }
 

@@ -37,26 +37,42 @@ function AsideContent({
   links,
   activePath,
   safeUser,
+  orgBrand,
   roleLabel,
   onNavigate,
 }: {
   links: NavLinkItem[];
   activePath: string;
   safeUser: { name: string; email: string } | null;
+  orgBrand: { name: string; logoUrl: string | null } | null;
   roleLabel: string;
   onNavigate?: () => void;
 }) {
   return (
     <>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <BrandMark href="/dashboard" size="md" decorative />
-          <div className="leading-tight">
-            <div className="text-sm font-semibold text-slate-100">SAVE IT</div>
-            <div className="text-xs text-slate-400">Lecciones Aprendidas</div>
+        <div className="flex min-w-0 items-center gap-3">
+          {orgBrand?.logoUrl ? (
+            // External tenant branding URLs are not known at build time.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={orgBrand.logoUrl}
+              alt=""
+              className="h-10 max-w-[120px] shrink-0 object-contain"
+            />
+          ) : (
+            <BrandMark href="/dashboard" size="md" decorative />
+          )}
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-sm font-semibold text-slate-100">
+              {orgBrand?.name ?? "SAVE IT"}
+            </div>
+            <div className="text-xs text-slate-400">
+              {orgBrand ? "SAVE IT · Lecciones" : "Lecciones Aprendidas"}
+            </div>
           </div>
         </div>
-        <div className="hidden text-xs text-slate-400 sm:block">
+        <div className="hidden shrink-0 text-xs text-slate-400 sm:block">
           {roleLabel}
         </div>
       </div>
@@ -113,12 +129,14 @@ export function AppShellClient({
   activePath,
   links,
   safeUser,
+  orgBrand,
   roleLabel,
 }: {
   children: ReactNode;
   activePath: string;
   links: NavLinkItem[];
   safeUser: { name: string; email: string } | null;
+  orgBrand: { name: string; logoUrl: string | null } | null;
   roleLabel: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -157,6 +175,7 @@ export function AppShellClient({
               links={links}
               activePath={activePath}
               safeUser={safeUser}
+              orgBrand={orgBrand}
               roleLabel={roleLabel}
             />
           </aside>
@@ -207,6 +226,7 @@ export function AppShellClient({
             links={links}
             activePath={activePath}
             safeUser={safeUser}
+            orgBrand={orgBrand}
             roleLabel={roleLabel}
             onNavigate={close}
           />

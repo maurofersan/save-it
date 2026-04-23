@@ -31,6 +31,25 @@ async function run() {
     }
     console.log("Specialties OK (QUALITY / SAFETY / PRODUCTION).");
 
+    const orgs = db.collection("organizations");
+    const orgSlug = "saveit-demo";
+    let org = await orgs.findOne({ slug: orgSlug });
+    const now = new Date().toISOString();
+    if (!org) {
+      const { insertedId } = await orgs.insertOne({
+        name: "SAVE IT Demo",
+        slug: orgSlug,
+        logoUrl: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      org = await orgs.findOne({ _id: insertedId });
+      console.log("Organización demo creada (slug: saveit-demo).");
+    } else {
+      console.log("Organización demo ya existe.");
+    }
+    if (!org) throw new Error("Failed to ensure organization");
+
     const users = db.collection("users");
     const email = "resident@saveit.local";
     const existing = await users.findOne({ email });
@@ -44,14 +63,23 @@ async function run() {
         company: "SAVE IT",
         title: "Residente",
         role: "RESIDENT",
+        organizationId: org._id,
         passwordSaltHex: salt.toString("hex"),
         passwordHashHex: hash.toString("hex"),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       });
       console.log("Usuario demo: resident@saveit.local / Resident123!");
     } else {
-      console.log("Usuario residente ya existe, no se modifica.");
+      if (!("organizationId" in existing) || !existing.organizationId) {
+        await users.updateOne(
+          { email },
+          { $set: { organizationId: org._id, updatedAt: now } },
+        );
+        console.log("Usuario demo existía sin empresa; asignada a SAVE IT Demo.");
+      } else {
+        console.log("Usuario residente ya existe, no se modifica.");
+      }
     }
 
     console.log("Seed completado.");

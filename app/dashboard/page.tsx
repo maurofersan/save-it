@@ -36,8 +36,9 @@ function MetricCard({
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
-  const metrics = await getDashboardMetrics();
+  const metrics = await getDashboardMetrics(user.organizationId);
 
   return (
     <AppShell activePath="/dashboard" currentUser={user}>
@@ -56,9 +57,11 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/lessons/new">
-              <Button>Registrar lección</Button>
-            </Link>
+            {user.role === "ENGINEER" ? (
+              <Link href="/lessons/new">
+                <Button>Registrar lección</Button>
+              </Link>
+            ) : null}
             <form action={logoutAction}>
               <Button variant="secondary" type="submit">
                 Salir
@@ -71,7 +74,7 @@ export default async function DashboardPage() {
           <MetricCard
             label="Total de lecciones"
             value={metrics.lessonsTotal}
-            hint="Registradas en la plataforma"
+            hint="Registradas en tu empresa"
           />
           <MetricCard
             label="Validadas"

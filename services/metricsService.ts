@@ -1,12 +1,18 @@
+import { ObjectId } from "mongodb";
 import { getMongoDb } from "@/lib/mongo";
 import type { DashboardMetrics } from "@/types/models";
 
 const LESSONS = "lessons";
 const SPECIALTIES = "specialties";
 
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+export async function getDashboardMetrics(
+  organizationId: string,
+): Promise<DashboardMetrics> {
   const db = await getMongoDb();
   const lessons = db.collection(LESSONS);
+  const org = new ObjectId(organizationId);
+
+  const orgMatch = { organizationId: org };
 
   const [
     lessonsTotal,
@@ -14,14 +20,18 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     lessonsInProgress,
     lessonsDiscarded,
   ] = await Promise.all([
-    lessons.countDocuments({}),
-    lessons.countDocuments({ status: "VALIDATED" }),
-    lessons.countDocuments({ status: { $in: ["RECEIVED", "IN_PROGRESS"] } }),
-    lessons.countDocuments({ status: "DISCARDED" }),
+    lessons.countDocuments(orgMatch),
+    lessons.countDocuments({ ...orgMatch, status: "VALIDATED" }),
+    lessons.countDocuments({
+      ...orgMatch,
+      status: { $in: ["RECEIVED", "IN_PROGRESS"] },
+    }),
+    lessons.countDocuments({ ...orgMatch, status: "DISCARDED" }),
   ]);
 
   const top = await lessons
     .aggregate<{ _id: DashboardMetrics["topSpecialties"][number]["specialtyKey"]; count: number }>([
+      { $match: { organizationId: org } },
       {
         $lookup: {
           from: SPECIALTIES,

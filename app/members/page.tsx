@@ -4,6 +4,7 @@ import { listMembers } from "@/services/userService";
 import { AppShell } from "@/components/nav/AppShell";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Badge";
+import { InviteMemberForm } from "@/components/members/InviteMemberForm";
 
 export const metadata = {
   title: "Miembros · SAVE IT",
@@ -12,20 +13,27 @@ export const metadata = {
 export default async function MembersPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
-  const members = await listMembers();
+  const members = await listMembers(user.organizationId);
 
   return (
     <AppShell activePath="/members">
       <Card>
         <CardHeader>
           <div className="text-sm font-semibold text-blue-200">Miembros</div>
-          <div className="mt-1 text-xl font-semibold text-slate-50">Usuarios registrados</div>
+          <div className="mt-1 text-xl font-semibold text-slate-50">Tu empresa</div>
           <div className="mt-1 text-sm text-slate-300">
-            Identifica al Residente (revisor) y a los ingenieros (registradores).
+            Solo se listan quienes pertenecen a la misma organización. El residente puede crear
+            cuentas de ingenieros.
           </div>
         </CardHeader>
         <CardBody>
+          {user.role === "RESIDENT" ? (
+            <div className="mb-6">
+              <InviteMemberForm />
+            </div>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="text-xs text-slate-400">

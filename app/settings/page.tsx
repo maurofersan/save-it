@@ -11,6 +11,7 @@ export const metadata = {
 export default async function SettingsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
   return (
     <AppShell activePath="/settings" currentUser={user}>

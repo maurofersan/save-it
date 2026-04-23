@@ -7,6 +7,15 @@ import type {
   UserRole,
 } from "@/types/domain";
 
+export type Organization = {
+  id: Id;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type User = {
   id: Id;
   name: string;
@@ -15,6 +24,8 @@ export type User = {
   company: string | null;
   title: string | null;
   role: UserRole;
+  /** Tenant: all app data is scoped to this organization. */
+  organizationId: Id | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -37,6 +48,8 @@ export type Lesson = {
   id: Id;
   title: string;
   specialtyId: Id;
+  /** Owning company (tenant). */
+  organizationId: Id;
   description: string;
   rootCause: string;
   solution: string;
@@ -64,6 +77,7 @@ export type LessonWithSpecialty = Lesson & {
 export type Evidence = {
   id: Id;
   lessonId: Id;
+  organizationId: Id;
   type: EvidenceType;
   url: string;
   createdAt: string;

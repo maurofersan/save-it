@@ -39,6 +39,8 @@ export async function getLessonFormData(): Promise<{
 }> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
+  if (user.role !== "ENGINEER") redirect("/dashboard");
   return { specialties: await listSpecialties() };
 }
 
@@ -48,6 +50,12 @@ export async function createLessonAction(
 ): Promise<ActionResult<{ lessonId: string }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
+  if (user.role !== "ENGINEER") {
+    return { ok: false, error: { message: "Solo ingenieros pueden registrar lecciones" } };
+  }
 
   const raw = {
     title: String(formData.get("title") ?? ""),
@@ -80,6 +88,7 @@ export async function createLessonAction(
   const lesson = await createLesson({
     title: parsed.data.title,
     specialtyId: specialty.id,
+    organizationId: user.organizationId,
     description: parsed.data.description,
     rootCause: parsed.data.rootCause,
     solution: parsed.data.solution,
@@ -92,7 +101,12 @@ export async function createLessonAction(
   const evidenceFile = formData.get("evidence") as File | null;
   if (evidenceFile && evidenceFile.size > 0) {
     const savedUrl = await saveEvidenceImage(evidenceFile, lesson.id);
-    await addEvidence({ lessonId: lesson.id, type: "IMAGE", url: savedUrl });
+    await addEvidence({
+      lessonId: lesson.id,
+      organizationId: user.organizationId,
+      type: "IMAGE",
+      url: savedUrl,
+    });
   }
 
   revalidatePath("/dashboard");
@@ -109,6 +123,9 @@ export async function setLessonStatusAction(
   if (!user) return { ok: false, error: { message: "No autenticado" } };
   if (user.role !== "RESIDENT")
     return { ok: false, error: { message: "No autorizado" } };
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
 
   const lessonId = String(formData.get("lessonId") ?? "").trim();
   const status = String(formData.get("status") ?? "") as LessonStatus;
@@ -120,7 +137,12 @@ export async function setLessonStatusAction(
     return { ok: false, error: { message: "Solicitud inválida" } };
   }
 
-  const updated = await setLessonStatus({ lessonId, status, reviewerComment });
+  const updated = await setLessonStatus({
+    lessonId,
+    organizationId: user.organizationId,
+    status,
+    reviewerComment,
+  });
   revalidatePath("/validate");
   revalidatePath("/library");
   revalidatePath("/dashboard");
@@ -139,6 +161,9 @@ export async function rateLesson(
 ): Promise<ActionResult<{ ratingAvg: number; ratingCount: number }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
 
   const lessonId = String(formData.get("lessonId") ?? "").trim();
   const rating = Number(formData.get("rating") ?? 0);
@@ -146,7 +171,12 @@ export async function rateLesson(
     return { ok: false, error: { message: "Solicitud inválida" } };
   }
 
-  const agg = await upsertLessonRating({ lessonId, userId: user.id, rating });
+  const agg = await upsertLessonRating({
+    lessonId,
+    userId: user.id,
+    organizationId: user.organizationId,
+    rating,
+  });
   revalidatePath("/library");
   return { ok: true, data: agg };
 }
@@ -156,7 +186,10 @@ export async function incrementViewsAction(
 ): Promise<ActionResult<{ views: number }>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: { message: "No autenticado" } };
-  const views = await incrementLessonViews(lessonId);
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
+  const views = await incrementLessonViews(lessonId, user.organizationId);
   return { ok: true, data: { views } };
 }
 
@@ -166,8 +199,12 @@ export async function listValidationQueue(input: {
 }): Promise<LessonWithSpecialty[]> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
   if (user.role !== "RESIDENT") redirect("/dashboard");
-  return await listLessonsForValidation(input);
+  return await listLessonsForValidation({
+    ...input,
+    organizationId: user.organizationId,
+  });
 }
 
 export async function searchLibrary(input: {
@@ -176,7 +213,11 @@ export async function searchLibrary(input: {
 }): Promise<LessonWithSpecialty[]> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return await searchValidatedLessons(input);
+  if (!user.organizationId) redirect("/login");
+  return await searchValidatedLessons({
+    ...input,
+    organizationId: user.organizationId,
+  });
 }
 
 async function saveEvidenceImage(

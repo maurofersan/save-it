@@ -17,6 +17,7 @@ export default async function ValidatePage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
   if (user.role !== "RESIDENT") redirect("/dashboard");
 
   const sp = await searchParams;

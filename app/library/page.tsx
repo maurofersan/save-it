@@ -21,6 +21,7 @@ export default async function LibraryPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
   const sp = await searchParams;
   const specialties = await listSpecialties();

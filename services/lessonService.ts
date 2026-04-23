@@ -13,6 +13,7 @@ type LessonDoc = {
   _id: ObjectId;
   title: string;
   specialtyId: ObjectId;
+  organizationId: ObjectId;
   description: string;
   rootCause: string;
   solution: string;
@@ -35,6 +36,7 @@ function mapLesson(doc: LessonDoc): Lesson {
     id: doc._id.toHexString(),
     title: doc.title,
     specialtyId: doc.specialtyId.toHexString(),
+    organizationId: doc.organizationId.toHexString(),
     description: doc.description,
     rootCause: doc.rootCause,
     solution: doc.solution,
@@ -56,6 +58,7 @@ function mapLesson(doc: LessonDoc): Lesson {
 export async function createLesson(input: {
   title: string;
   specialtyId: string;
+  organizationId: string;
   description: string;
   rootCause: string;
   solution: string;
@@ -69,6 +72,7 @@ export async function createLesson(input: {
   const res = await db.collection(LESSONS).insertOne({
     title: input.title,
     specialtyId: new ObjectId(input.specialtyId),
+    organizationId: new ObjectId(input.organizationId),
     description: input.description,
     rootCause: input.rootCause,
     solution: input.solution,
@@ -102,13 +106,36 @@ export async function getLessonById(id: string): Promise<Lesson | null> {
   return doc ? mapLesson(doc) : null;
 }
 
+export async function getLessonByIdInOrganization(
+  lessonId: string,
+  organizationId: string,
+): Promise<Lesson | null> {
+  const db = await getMongoDb();
+  let lid: ObjectId;
+  let orgOid: ObjectId;
+  try {
+    lid = new ObjectId(lessonId);
+    orgOid = new ObjectId(organizationId);
+  } catch {
+    return null;
+  }
+  const doc = await db.collection<LessonDoc>(LESSONS).findOne({
+    _id: lid,
+    organizationId: orgOid,
+  });
+  return doc ? mapLesson(doc) : null;
+}
+
 export async function getValidatedLessonWithSpecialtyById(
   id: string,
+  organizationId: string,
 ): Promise<LessonWithSpecialty | null> {
   const db = await getMongoDb();
   let oid: ObjectId;
+  let orgOid: ObjectId;
   try {
     oid = new ObjectId(id);
+    orgOid = new ObjectId(organizationId);
   } catch {
     return null;
   }
@@ -121,7 +148,9 @@ export async function getValidatedLessonWithSpecialtyById(
         created_by_email: string;
       }
     >([
-      { $match: { _id: oid, status: "VALIDATED" } },
+      {
+        $match: { _id: oid, status: "VALIDATED", organizationId: orgOid },
+      },
       {
         $lookup: {
           from: SPECIALTIES,
@@ -145,6 +174,7 @@ export async function getValidatedLessonWithSpecialtyById(
           _id: 1,
           title: 1,
           specialtyId: 1,
+          organizationId: 1,
           description: 1,
           rootCause: 1,
           solution: 1,
@@ -184,6 +214,7 @@ export async function getValidatedLessonWithSpecialtyById(
 
 export async function setLessonStatus(input: {
   lessonId: string;
+  organizationId: string;
   status: LessonStatus;
   reviewerComment: string | null;
 }): Promise<Lesson> {
@@ -199,7 +230,10 @@ export async function setLessonStatus(input: {
   }
 
   const r = await db.collection<LessonDoc>(LESSONS).updateOne(
-    { _id: new ObjectId(input.lessonId) },
+    {
+      _id: new ObjectId(input.lessonId),
+      organizationId: new ObjectId(input.organizationId),
+    },
     { $set },
   );
   if (r.matchedCount === 0) throw new Error("Lesson not found");
@@ -209,17 +243,21 @@ export async function setLessonStatus(input: {
   return lesson;
 }
 
-export async function incrementLessonViews(lessonId: string): Promise<number> {
+export async function incrementLessonViews(
+  lessonId: string,
+  organizationId: string,
+): Promise<number> {
   const db = await getMongoDb();
   const now = new Date().toISOString();
   const oid = new ObjectId(lessonId);
   const r = await db.collection<LessonDoc>(LESSONS).updateOne(
-    { _id: oid },
+    { _id: oid, organizationId: new ObjectId(organizationId) },
     { $inc: { viewsCount: 1 }, $set: { updatedAt: now } },
   );
   if (r.matchedCount === 0) throw new Error("Lesson not found");
+  const orgOid = new ObjectId(organizationId);
   const doc = await db.collection<LessonDoc>(LESSONS).findOne(
-    { _id: oid },
+    { _id: oid, organizationId: orgOid },
     { projection: { viewsCount: 1 } },
   );
   if (!doc) throw new Error("Lesson not found");
@@ -229,18 +267,26 @@ export async function incrementLessonViews(lessonId: string): Promise<number> {
 export async function upsertLessonRating(input: {
   lessonId: string;
   userId: string;
+  organizationId: string;
   rating: number;
 }): Promise<{ ratingAvg: number; ratingCount: number }> {
   const db = await getMongoDb();
   const lessonOid = new ObjectId(input.lessonId);
   const userOid = new ObjectId(input.userId);
+  const orgOid = new ObjectId(input.organizationId);
   const now = new Date().toISOString();
+
+  const lesson = await db.collection<LessonDoc>(LESSONS).findOne({
+    _id: lessonOid,
+    organizationId: orgOid,
+  });
+  if (!lesson) throw new Error("Lección no encontrada");
 
   await db.collection(RATINGS).updateOne(
     { lessonId: lessonOid, userId: userOid },
     {
       $set: { rating: input.rating, updatedAt: now },
-      $setOnInsert: { createdAt: now },
+      $setOnInsert: { createdAt: now, organizationId: orgOid },
     },
     { upsert: true },
   );
@@ -248,7 +294,7 @@ export async function upsertLessonRating(input: {
   const agg = await db
     .collection(RATINGS)
     .aggregate<{ avg: number; cnt: number }>([
-      { $match: { lessonId: lessonOid } },
+      { $match: { lessonId: lessonOid, organizationId: orgOid } },
       {
         $group: {
           _id: null,
@@ -263,7 +309,7 @@ export async function upsertLessonRating(input: {
   const ratingCount = agg[0]?.cnt ?? 0;
 
   await db.collection<LessonDoc>(LESSONS).updateOne(
-    { _id: lessonOid },
+    { _id: lessonOid, organizationId: orgOid },
     {
       $set: {
         ratingAvg,
@@ -277,14 +323,17 @@ export async function upsertLessonRating(input: {
 }
 
 export async function listLessonsForValidation(filters: {
+  organizationId: string;
   q?: string;
   status?: LessonStatus;
 }): Promise<LessonWithSpecialty[]> {
   const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
   const status = filters.status;
+  const orgOid = new ObjectId(filters.organizationId);
 
   const pipeline: object[] = [
+    { $match: { organizationId: orgOid } },
     {
       $lookup: {
         from: USERS,
@@ -323,6 +372,7 @@ export async function listLessonsForValidation(filters: {
       _id: 1,
       title: 1,
       specialtyId: 1,
+      organizationId: 1,
       description: 1,
       rootCause: 1,
       solution: 1,
@@ -368,14 +418,16 @@ export async function listLessonsForValidation(filters: {
 }
 
 export async function searchValidatedLessons(filters: {
+  organizationId: string;
   q?: string;
   specialtyKey?: LessonWithSpecialty["specialtyKey"];
 }): Promise<LessonWithSpecialty[]> {
   const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
+  const orgOid = new ObjectId(filters.organizationId);
 
   const pipeline: object[] = [
-    { $match: { status: "VALIDATED" } },
+    { $match: { status: "VALIDATED", organizationId: orgOid } },
     {
       $lookup: {
         from: SPECIALTIES,
@@ -420,6 +472,7 @@ export async function searchValidatedLessons(filters: {
       _id: 1,
       title: 1,
       specialtyId: 1,
+      organizationId: 1,
       description: 1,
       rootCause: 1,
       solution: 1,

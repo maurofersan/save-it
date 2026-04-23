@@ -13,6 +13,8 @@ type UserDoc = {
   company: string | null;
   title: string | null;
   role: UserRole;
+  /** Present for multi-tenant users; null only for legacy accounts. */
+  organizationId?: ObjectId | null;
   passwordSaltHex: string;
   passwordHashHex: string;
   createdAt: string;
@@ -28,6 +30,9 @@ function mapUser(doc: Omit<UserDoc, "passwordSaltHex" | "passwordHashHex">): Use
     company: doc.company,
     title: doc.title,
     role: doc.role,
+    organizationId: doc.organizationId
+      ? doc.organizationId.toHexString()
+      : null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -106,6 +111,7 @@ export async function createUser(input: {
   name: string;
   email: string;
   role: UserRole;
+  organizationId: string;
   passwordSaltHex: string;
   passwordHashHex: string;
 }): Promise<User> {
@@ -118,6 +124,7 @@ export async function createUser(input: {
     company: null,
     title: null,
     role: input.role,
+    organizationId: new ObjectId(input.organizationId),
     passwordSaltHex: input.passwordSaltHex,
     passwordHashHex: input.passwordHashHex,
     createdAt: now,
@@ -153,13 +160,17 @@ export async function updateUserProfile(
   return user;
 }
 
-export async function listMembers(): Promise<
+export async function listMembers(organizationId: string): Promise<
   Array<Pick<User, "id" | "name" | "email" | "title" | "role">>
 > {
   const db = await getMongoDb();
+  const oid = new ObjectId(organizationId);
   const rows = await db
     .collection<UserDoc>(COL)
-    .find({}, { projection: { _id: 1, name: 1, email: 1, title: 1, role: 1 } })
+    .find(
+      { organizationId: oid },
+      { projection: { _id: 1, name: 1, email: 1, title: 1, role: 1 } },
+    )
     .sort({ role: -1, name: 1 })
     .toArray();
   return rows.map((r) => ({

@@ -10,6 +10,7 @@ export const metadata = {
 export default async function HelpPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
   return (
     <AppShell activePath="/help">

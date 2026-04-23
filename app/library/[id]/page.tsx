@@ -18,14 +18,15 @@ export default async function LibraryDetailPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
   const { id } = await params;
   if (!isValidObjectIdString(id)) redirect("/library");
 
-  const lesson = await getValidatedLessonWithSpecialtyById(id);
+  const lesson = await getValidatedLessonWithSpecialtyById(id, user.organizationId);
   if (!lesson) redirect("/library");
 
-  const evidence = await listEvidenceForLesson(id);
+  const evidence = await listEvidenceForLesson(id, user.organizationId);
 
   return (
     <AppShell activePath="/library">

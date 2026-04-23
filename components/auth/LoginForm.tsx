@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -63,12 +62,9 @@ export function LoginForm({ next }: { next?: string }) {
             {pending ? "Ingresando..." : "Ingresar"}
           </Button>
 
-          <div className="text-center text-sm text-slate-300">
-            ¿No tienes cuenta?{" "}
-            <Link className="text-blue-200 hover:underline" href="/register">
-              Crear cuenta
-            </Link>
-          </div>
+          <p className="text-center text-xs leading-relaxed text-slate-400">
+            Si aún no tienes acceso, pide a tu revisor (residente) que cree tu cuenta.
+          </p>
         </form>
       </CardBody>
     </Card>

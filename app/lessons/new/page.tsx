@@ -11,6 +11,7 @@ export const metadata = {
 export default async function NewLessonPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.organizationId) redirect("/login");
 
   const { specialties } = await getLessonFormData();
 

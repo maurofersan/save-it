@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getCurrentUser } from "@/lib/auth";
+import { getOrganizationById } from "@/services/organizationService";
 import type { User } from "@/types/models";
 import { AppShellClient } from "@/components/nav/AppShellClient";
 
@@ -16,9 +17,14 @@ export async function AppShell({
   const user = currentUser !== undefined ? currentUser : await getCurrentUser();
   const safeUser: User | null = user;
 
+  const org =
+    safeUser?.organizationId != null
+      ? await getOrganizationById(safeUser.organizationId)
+      : null;
+
   const links = [
     { href: "/dashboard", label: "Inicio" },
-    { href: "/lessons/new", label: "Registrar" },
+    ...(safeUser?.role === "ENGINEER" ? [{ href: "/lessons/new", label: "Registrar" }] : []),
     { href: "/library", label: "Visualizar" },
     ...(safeUser?.role === "RESIDENT" ? [{ href: "/validate", label: "Validar" }] : []),
     { href: "/members", label: "Miembros" },
@@ -36,6 +42,11 @@ export async function AppShell({
       safeUser={
         safeUser
           ? { name: safeUser.name, email: safeUser.email }
+          : null
+      }
+      orgBrand={
+        org
+          ? { name: org.name, logoUrl: org.logoUrl }
           : null
       }
       roleLabel={roleLabel}
