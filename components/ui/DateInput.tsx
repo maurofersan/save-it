@@ -51,10 +51,10 @@ export function DateInput({
     () =>
       createTheme({
         palette: {
-          mode: "dark",
-          primary: { main: "#2563EB" }, // blue-600
-          background: { default: "#020617", paper: "#020617" }, // slate-950
-          text: { primary: "#F1F5F9", secondary: "#94A3B8" }, // slate-100/400
+          mode: "light",
+          primary: { main: "#1d4ed8" },
+          background: { default: "#b4cdff", paper: "#f0f6ff" },
+          text: { primary: "#0f172a", secondary: "#475569" },
         },
         shape: { borderRadius: 14 },
         components: {
@@ -64,11 +64,11 @@ export function DateInput({
           MuiOutlinedInput: {
             styleOverrides: {
               root: {
-                background: "rgba(255, 255, 255, 0.05)",
+                background: "color-mix(in srgb, #ffffff 72%, #8fb0f5)",
                 borderRadius: 14,
               },
               notchedOutline: {
-                borderColor: "rgba(255, 255, 255, 0.10)",
+                borderColor: "color-mix(in srgb, #1e3a5f 18%, #b4cdff)",
               },
             },
           },

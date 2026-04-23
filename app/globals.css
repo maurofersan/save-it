@@ -1,56 +1,113 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   THEME: light (tema actual)
+   Base principal ~#B4CDFF, textos en tonos oscuros para buen contraste.
+   ============================================================================= */
 :root {
-  --background: #0b1220;
-  /* --background: #91b0ff; */
-  --foreground: #e5e7eb;
-  --surface: #0f172a;
-  /* --surface: #b4cdff; */
-  --surface-2: #111c33;
-  /* --surface-2: #91b0ff; */
-  --muted: #94a3b8;
-  --border: rgba(148, 163, 184, 0.18);
-  --primary: #2563eb;
-  /* --primary: #b4cdff; */
-  --primary-2: #1d4ed8;
-  /* --primary-2: #91b0ff; */
-  --danger: #ef4444;
-  --success: #22c55e;
+  --background: #b4cdff;
+  --foreground: #0f172a;
+  --surface: #d6e4ff;
+  --surface-2: #c8d9fc;
+  --muted: #475569;
+  --border: rgba(15, 23, 42, 0.14);
+  --primary: #1d4ed8;
+  --primary-2: #1e40af;
+  --danger: #b91c1c;
+  --success: #047857;
 }
+
+/* =============================================================================
+   TEMA ANTERIOR (oscuro) — descomentar bloque y comentar :root de arriba
+   + restaurar sección "body" y ".c-card" comentada abajo si quisieras volver.
+   =============================================================================
+   :root {
+     --background: #0b1220;
+     --foreground: #e5e7eb;
+     --surface: #0f172a;
+     --surface-2: #111c33;
+     --muted: #94a3b8;
+     --border: rgba(148, 163, 184, 0.18);
+     --primary: #2563eb;
+     --primary-2: #1d4ed8;
+     --danger: #ef4444;
+     --success: #22c55e;
+   }
+   ============================================================================= */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Slate: en esta app "text-slate-50" se usa como título (antes claro s/ fondo oscuro).
+     Aquí mapeamos a tonos oscuros legibles s/ fondo #B4CDFF. "slate-950" = paneles claros. */
+  --color-slate-50: #0c1220;
+  --color-slate-100: #111c2e;
+  --color-slate-200: #1e293b;
+  --color-slate-300: #334155;
+  --color-slate-400: #475569;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #f1f5fc;
+  --color-slate-950: #e8f0ff;
+
+  /* Acentos que antes eran "pastel claro" para UI oscura → tonos más oscuros p/ buen contraste */
+  --color-blue-200: #1e40af;
+  --color-blue-500: #2563eb;
+  --color-blue-600: #1d4ed8;
+  --color-blue-700: #1d4ed8;
+  --color-red-200: #9f1239;
+  --color-amber-200: #92400e;
+  --color-emerald-200: #047857;
+  --color-green-200: #166534;
 }
 
 body {
   background:
     radial-gradient(
       1200px 800px at 20% 10%,
-      rgba(37, 99, 235, 0.22),
+      rgba(255, 255, 255, 0.55),
       transparent 55%
     ),
     radial-gradient(
       900px 700px at 90% 40%,
-      rgba(59, 130, 246, 0.12),
+      rgba(30, 64, 175, 0.12),
       transparent 55%
     ),
     var(--background);
   color: var(--foreground);
 }
 
+/* Tema oscuro: body (referencia) — descomentar con el :root oscuro
+body {
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(37, 99, 235, 0.22), transparent 55%),
+    radial-gradient(900px 700px at 90% 40%, rgba(59, 130, 246, 0.12), transparent 55%),
+    var(--background);
+  color: var(--foreground);
+}
+*/
+
 /* BEM: c-brand — logo on white plate (public/logo-saveit.png) */
 .c-brand__mark {
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  border: 1px solid rgba(15, 23, 42, 0.15);
   box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-/* Extra “air” in the asset → scale up inside the fixed box (container size unchanged). */
+/* Tema oscuro: .c-brand__mark (referencia)
+.c-brand__mark {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+*/
+
 .c-brand__image {
   object-position: center;
   transform-origin: center;
@@ -68,15 +125,22 @@ body {
   transform: scale(1.2);
 }
 
-/* BEM-ish component blocks (used for small custom styling/animations) */
 .c-card {
   border: 1px solid var(--border);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.02)
+    color-mix(in srgb, #ffffff 88%, #b4cdff),
+    color-mix(in srgb, #ffffff 72%, #a8c4ff)
   );
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
+
+/* Tema oscuro: .c-card (referencia)
+.c-card {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+}
+*/
 
 .c-button {
   transition:
@@ -99,10 +163,32 @@ body {
 .c-skeleton {
   background: linear-gradient(
     90deg,
-    rgba(148, 163, 184, 0.12),
-    rgba(148, 163, 184, 0.2),
-    rgba(148, 163, 184, 0.12)
+    rgba(148, 163, 184, 0.18),
+    rgba(100, 116, 139, 0.22),
+    rgba(148, 163, 184, 0.18)
   );
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite linear;
+}
+
+/* Misma clase Tailwind, pero mezclando blanco con el tono pág. (#B4CDFF) en lugar de s/ gris casi negro. */
+@layer utilities {
+  .bg-white\/5 {
+    background-color: color-mix(in srgb, #ffffff 72%, #8fb0f5) !important;
+  }
+  .bg-white\/10 {
+    background-color: color-mix(in srgb, #ffffff 80%, #8fb0f5) !important;
+  }
+  .hover\:bg-white\/5:hover {
+    background-color: color-mix(in srgb, #ffffff 78%, #7ea3f0) !important;
+  }
+  .hover\:bg-white\/10:hover {
+    background-color: color-mix(in srgb, #ffffff 86%, #6b95eb) !important;
+  }
+  .focus\:bg-white\/10:focus {
+    background-color: color-mix(in srgb, #ffffff 88%, #6b95eb) !important;
+  }
+  .border-white\/10 {
+    border-color: color-mix(in srgb, #1e3a5f 18%, #b4cdff) !important;
+  }
 }

@@ -11,44 +11,37 @@ export default function AuthLayout({
         <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:items-center">
           <div className="hidden lg:block">
             <div className="c-card c-auth-hero rounded-3xl border border-white/10 p-10">
-              <div className="c-auth-hero__brand flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
-                <BrandMark size="lg" decorative />
+              <div className="c-auth-hero__brand flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+                <BrandMark size="lg" variant="bare" decorative />
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-blue-200">
+                  <div className="text-2xl font-bold tracking-tight text-blue-600 sm:text-3xl">
                     SAVE IT
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Lecciones Aprendidas
+                  <p className="mt-0.5 text-sm font-medium tracking-wide text-rose-500">
+                    PLATAFORMA DIGITAL
                   </p>
                 </div>
               </div>
-              <h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-50 sm:mt-8">
+              <h1 className="mt-8 text-3xl font-semibold tracking-tight text-slate-50 sm:mt-10">
                 Gestión de Lecciones Aprendidas
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-300">
                 Captura, valida y reutiliza conocimiento de obra con un flujo
                 simple: registrar → revisar → publicar.
               </p>
-              <div className="mt-8 grid grid-cols-1 gap-3 text-sm text-slate-300">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  - Roles: Ingeniero (registrador) y Residente (revisor).
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  - Evidencia: mínimo 1 imagen para validar.
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  - Biblioteca: búsqueda + métricas (vistas y puntuación).
-                </div>
-              </div>
             </div>
           </div>
 
           <div className="c-auth-panel mx-auto w-full max-w-md">
             <header className="c-auth-panel__brand mb-8 flex flex-col items-center text-center lg:hidden">
-              <BrandMark size="md" priority decorative />
-              <div className="mt-4 space-y-1">
-                <p className="text-sm font-semibold text-blue-200">SAVE IT</p>
-                <p className="text-xs text-slate-400">Lecciones Aprendidas</p>
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+                <BrandMark size="md" variant="bare" priority decorative />
+                <div className="min-w-0 text-center sm:text-left">
+                  <p className="text-xl font-bold text-blue-600">SAVE IT</p>
+                  <p className="text-sm font-medium text-rose-500">
+                    PLATAFORMA DIGITAL
+                  </p>
+                </div>
               </div>
             </header>
             {children}

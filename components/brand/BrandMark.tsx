@@ -8,6 +8,13 @@ const markSizeClass: Record<"sm" | "md" | "lg", string> = {
   lg: "c-brand__mark--lg h-16 w-16 rounded-2xl p-px sm:h-[4.5rem] sm:w-[4.5rem]",
 };
 
+/** Sin placa blanca: logo PNG directo (p. ej. login / héroe). */
+const bareSizeClass: Record<"sm" | "md" | "lg", string> = {
+  sm: "h-12 w-12",
+  md: "h-20 w-20",
+  lg: "h-32 w-32 sm:h-36 sm:w-36",
+};
+
 export type BrandMarkSize = keyof typeof markSizeClass;
 
 type BrandMarkProps = {
@@ -15,6 +22,11 @@ type BrandMarkProps = {
   href?: string;
   priority?: boolean;
   className?: string;
+  /**
+   * `default` — caja clásica (blanco) para shell y listados.
+   * `bare` — solo el recurso, sin fondo (login / héroe).
+   */
+  variant?: "default" | "bare";
   /** Use when visible copy (e.g. “SAVE IT”) is next to the mark to avoid duplicate announcements. */
   decorative?: boolean;
 };
@@ -24,26 +36,43 @@ export function BrandMark({
   href,
   priority,
   className,
+  variant = "default",
   decorative,
 }: BrandMarkProps) {
   const alt = decorative ? "" : "SAVE IT";
 
-  const mark = (
-    <span
-      className={`c-brand__mark inline-grid shrink-0 place-items-center bg-white ${markSizeClass[size]} ${className ?? ""}`}
-      aria-hidden={decorative ? true : undefined}
-    >
-      <Image
-        src="/logo-saveit.png"
-        alt={alt}
-        width={256}
-        height={256}
-        sizes="(max-width: 1024px) 72px, 80px"
-        className="c-brand__image block h-full w-full object-contain object-center"
-        priority={priority}
-      />
-    </span>
-  );
+  const mark =
+    variant === "bare" ? (
+      <span
+        className={`inline-flex shrink-0 items-center justify-center ${bareSizeClass[size]} ${className ?? ""}`}
+        aria-hidden={decorative ? true : undefined}
+      >
+        <Image
+          src="/logo-saveit.png"
+          alt={alt}
+          width={256}
+          height={256}
+          sizes="(max-width: 1024px) 160px, 200px"
+          className="h-full w-full object-contain object-center drop-shadow-sm"
+          priority={priority}
+        />
+      </span>
+    ) : (
+      <span
+        className={`c-brand__mark inline-grid shrink-0 place-items-center bg-white ${markSizeClass[size]} ${className ?? ""}`}
+        aria-hidden={decorative ? true : undefined}
+      >
+        <Image
+          src="/logo-saveit.png"
+          alt={alt}
+          width={256}
+          height={256}
+          sizes="(max-width: 1024px) 72px, 80px"
+          className="c-brand__image block h-full w-full object-contain object-center"
+          priority={priority}
+        />
+      </span>
+    );
 
   if (href) {
     return (
