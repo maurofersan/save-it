@@ -21,6 +21,19 @@ import type {
 dayjs.extend(relativeTime);
 dayjs.locale("es");
 
+/**
+ * Ably puede lanzar (p. ej. "Connection closed") al cerrar dos veces o en
+ * React StrictMode; lo ignoramos de forma explícita.
+ */
+function closeAblyClientSafely(client: Ably.Realtime | null | undefined): void {
+  if (!client) return;
+  try {
+    client.close();
+  } catch {
+    // ignore
+  }
+}
+
 const STATUSES = new Set<string>([
   "RECEIVED",
   "IN_PROGRESS",
@@ -172,7 +185,7 @@ export function NotificationBell({
         clientId: userId,
       });
       if (cancelled) {
-        c.close();
+        closeAblyClientSafely(c);
         return;
       }
       ablyClientRef.current = c;
@@ -198,8 +211,9 @@ export function NotificationBell({
 
     return () => {
       cancelled = true;
-      ablyClientRef.current?.close();
+      const prev = ablyClientRef.current;
       ablyClientRef.current = null;
+      closeAblyClientSafely(prev);
     };
   }, [userId, organizationId, userRole]);
 
