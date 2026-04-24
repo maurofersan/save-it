@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { uploadLessonAttachment } from "@/lib/cloudinary";
 import { addEvidence } from "@/services/evidenceService";
+import { listEvidenceForLesson } from "@/services/evidenceService";
 import {
   createLesson,
   incrementLessonViews,
@@ -18,7 +19,7 @@ import { getOrganizationById } from "@/services/organizationService";
 import { listSpecialties } from "@/services/specialtyService";
 import type { ActionResult } from "@/types/actions";
 import type { LessonStatus, ProjectStageKey, SpecialtyKey } from "@/types/domain";
-import type { Lesson, LessonWithSpecialty, Specialty } from "@/types/models";
+import type { Evidence, Lesson, LessonWithSpecialty, Specialty } from "@/types/models";
 
 const STAGE_KEYS = [
   "LICITACION",
@@ -271,6 +272,19 @@ export async function incrementViewsAction(
   }
   const views = await incrementLessonViews(lessonId, user.organizationId);
   return { ok: true, data: { views } };
+}
+
+export async function listLessonEvidenceAction(
+  lessonId: string,
+): Promise<ActionResult<Evidence[]>> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: { message: "No autenticado" } };
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
+  // Both roles can view evidence; keep tenant scoping.
+  const evidence = await listEvidenceForLesson(lessonId, user.organizationId);
+  return { ok: true, data: evidence };
 }
 
 export async function listValidationQueue(input: {

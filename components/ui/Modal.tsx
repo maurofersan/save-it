@@ -49,7 +49,9 @@ export function Modal({
         >
           <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-blue-200">Validación</div>
+              <div className="text-sm font-semibold text-blue-200">
+                Validación
+              </div>
               <div className="mt-1 truncate text-lg font-semibold text-slate-50">
                 {title}
               </div>
@@ -57,7 +59,7 @@ export function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/60"
+              className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-2 text-slate-100 transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/60 cursor-pointer"
               aria-label="Cerrar modal"
             >
               <svg
@@ -74,7 +76,9 @@ export function Modal({
             </button>
           </div>
 
-          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
+          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
+            {children}
+          </div>
 
           {footer ? (
             <div className="border-t border-white/10 px-5 py-4">{footer}</div>
@@ -84,4 +88,3 @@ export function Modal({
     </div>
   );
 }
-
