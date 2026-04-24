@@ -1,7 +1,6 @@
 import type {
   EvidenceType,
   Id,
-  ImpactType,
   LessonStatus,
   ProjectStageKey,
   SpecialtyKey,
@@ -69,10 +68,10 @@ export type Lesson = {
   /** Resumen legado / búsqueda; en registros nuevos suele coincidir con `lessonLearned`. */
   solution: string;
   eventDate: string | null;
-  /** Marcado en el formulario: tiempo y/o costo. */
-  impactKinds: ImpactType[];
-  /** Primera dimensión de impacto (compatibilidad con registros y vistas antiguas). */
-  impactType: ImpactType;
+  /** Horas de impacto (decimal). */
+  impactTimeHours: number;
+  /** Monto de impacto en soles (PEN), decimal. */
+  impactCostPen: number;
   status: LessonStatus;
   reviewerComment: string | null;
   createdBy: Id;

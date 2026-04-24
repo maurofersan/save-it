@@ -3,14 +3,18 @@
 import { useMemo, useState } from "react";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker, type DatePickerProps } from "@mui/x-date-pickers/DatePicker";
+import {
+  DatePicker,
+  type DatePickerProps,
+} from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/es";
 import styles from "./DateInput.module.css";
 
-type DatePickerTextFieldSlotProps =
-  NonNullable<DatePickerProps["slotProps"]>["textField"];
+type DatePickerTextFieldSlotProps = NonNullable<
+  DatePickerProps["slotProps"]
+>["textField"];
 
 function parseYmd(value: string): Dayjs | null {
   const v = value.trim();
@@ -95,7 +99,7 @@ export function DateInput({
 
   return (
     <div className={styles.dateInput}>
-      <label className={styles.dateInput__label}>{label}</label>
+      <label className="text-sm text-slate-200">{label}</label>
 
       {/* Hidden input keeps FormData contract (YYYY-MM-DD) */}
       <input name={name} value={value} readOnly required={required} hidden />

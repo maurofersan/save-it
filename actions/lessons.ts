@@ -17,12 +17,7 @@ import {
 import { getOrganizationById } from "@/services/organizationService";
 import { listSpecialties } from "@/services/specialtyService";
 import type { ActionResult } from "@/types/actions";
-import type {
-  ImpactType,
-  LessonStatus,
-  ProjectStageKey,
-  SpecialtyKey,
-} from "@/types/domain";
+import type { LessonStatus, ProjectStageKey, SpecialtyKey } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty, Specialty } from "@/types/models";
 
 const STAGE_KEYS = [
@@ -32,30 +27,41 @@ const STAGE_KEYS = [
   "FINALIZACION",
 ] as const satisfies readonly ProjectStageKey[];
 
-const createLessonSchema = z.object({
-  projectName: z.string().trim().min(2, "Proyecto muy corto").max(200),
-  projectType: z.string().trim().min(2, "Tipo muy corto").max(200),
-  area: z.string().trim().min(2, "Área muy corta").max(200),
-  cargo: z.string().trim().min(2, "Cargo muy corto").max(120),
-  title: z.string().trim().min(5, "Nombre muy corto").max(140),
-  specialtyKey: z.enum(["QUALITY", "SAFETY", "PRODUCTION"]),
-  projectStages: z
-    .array(z.enum(STAGE_KEYS))
-    .min(1, "Selecciona al menos una etapa del proyecto"),
-  description: z.string().trim().min(10, "Texto muy corto").max(4000),
-  rootCause: z.string().trim().min(10, "Texto muy corto").max(2000),
-  actionsTaken: z.string().trim().min(10, "Texto muy corto").max(4000),
-  lessonLearned: z.string().trim().min(10, "Texto muy corto").max(4000),
-  actionPlan: z.string().trim().max(4000),
-  eventDate: z
-    .string()
-    .trim()
-    .min(1, "Fecha de suceso requerida")
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
-  impactKinds: z
-    .array(z.enum(["TIME", "COST"]))
-    .min(1, "Marca al menos tiempo o costo"),
-});
+function parseFormDecimal(value: string): number {
+  const t = value.trim().replace(/,/g, ".");
+  if (t === "") return 0;
+  const n = parseFloat(t);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const createLessonSchema = z
+  .object({
+    projectName: z.string().trim().min(2, "Proyecto muy corto").max(200),
+    projectType: z.string().trim().min(2, "Tipo muy corto").max(200),
+    area: z.string().trim().min(2, "Área muy corta").max(200),
+    cargo: z.string().trim().min(2, "Cargo muy corto").max(120),
+    title: z.string().trim().min(5, "Nombre muy corto").max(140),
+    specialtyKey: z.enum(["QUALITY", "SAFETY", "PRODUCTION"]),
+    projectStages: z
+      .array(z.enum(STAGE_KEYS))
+      .min(1, "Selecciona al menos una etapa del proyecto"),
+    description: z.string().trim().min(10, "Texto muy corto").max(4000),
+    rootCause: z.string().trim().min(10, "Texto muy corto").max(2000),
+    actionsTaken: z.string().trim().min(10, "Texto muy corto").max(4000),
+    lessonLearned: z.string().trim().min(10, "Texto muy corto").max(4000),
+    actionPlan: z.string().trim().max(4000),
+    eventDate: z
+      .string()
+      .trim()
+      .min(1, "Fecha de suceso requerida")
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
+    impactTimeHours: z.number().min(0).max(1_000_000_000),
+    impactCostPen: z.number().min(0).max(1e15),
+  })
+  .refine((d) => d.impactTimeHours > 0 || d.impactCostPen > 0, {
+    message: "Ingresa horas de impacto o monto en soles (o ambos).",
+    path: ["impactTimeHours"],
+  });
 
 export async function getLessonFormData(): Promise<{
   specialties: Specialty[];
@@ -97,15 +103,6 @@ export async function createLessonAction(
       (STAGE_KEYS as readonly string[]).includes(s),
     );
 
-  const impactKinds = [
-    ...new Set(
-      formData
-        .getAll("impactKind")
-        .map(String)
-        .filter((s): s is ImpactType => s === "TIME" || s === "COST"),
-    ),
-  ];
-
   const raw = {
     projectName: String(formData.get("projectName") ?? ""),
     projectType: String(formData.get("projectType") ?? ""),
@@ -120,7 +117,10 @@ export async function createLessonAction(
     lessonLearned: String(formData.get("lessonLearned") ?? ""),
     actionPlan: String(formData.get("actionPlan") ?? ""),
     eventDate: String(formData.get("eventDate") ?? ""),
-    impactKinds,
+    impactTimeHours: parseFormDecimal(
+      String(formData.get("impactTimeHours") ?? ""),
+    ),
+    impactCostPen: parseFormDecimal(String(formData.get("impactCostPen") ?? "")),
   };
 
   const parsed = createLessonSchema.safeParse(raw);
@@ -156,7 +156,8 @@ export async function createLessonAction(
     actionPlan: parsed.data.actionPlan,
     solution: parsed.data.lessonLearned,
     eventDate: parsed.data.eventDate,
-    impactKinds: parsed.data.impactKinds,
+    impactTimeHours: parsed.data.impactTimeHours,
+    impactCostPen: parsed.data.impactCostPen,
     createdBy: user.id,
   });
 
@@ -275,6 +276,10 @@ export async function incrementViewsAction(
 export async function listValidationQueue(input: {
   q?: string;
   status?: LessonStatus;
+  specialtyKey?: SpecialtyKey;
+  projectType?: string;
+  year?: string;
+  ratingMin?: number;
 }): Promise<LessonWithSpecialty[]> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -289,6 +294,9 @@ export async function listValidationQueue(input: {
 export async function searchLibrary(input: {
   q?: string;
   specialtyKey?: SpecialtyKey;
+  projectType?: string;
+  year?: string;
+  ratingMin?: number;
 }): Promise<LessonWithSpecialty[]> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");

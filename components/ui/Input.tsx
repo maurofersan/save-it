@@ -2,6 +2,10 @@
 
 import * as React from "react";
 
+/** Misma apariencia que el `<input>` de `Input` (para `NumericFormat`, prefijos, etc.). */
+export const formInputClassName =
+  "h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/60";
+
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
     return (
@@ -63,7 +67,7 @@ export function Input(
   const inputType =
     useToggle && passwordVisible ? "text" : type;
 
-  const inputClass = `h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/60 ${useToggle ? "pr-11" : ""} ${className}`;
+  const inputClass = `${formInputClassName} ${useToggle ? "pr-11" : ""} ${className}`;
 
   return (
     <label className="flex flex-col gap-1.5">

@@ -73,7 +73,9 @@ function AsideContent({
             </div>
           </div>
         </div>
-        <div className="hidden shrink-0 text-xs text-slate-400 sm:block">{roleLabel}</div>
+        <div className="hidden shrink-0 text-xs text-slate-400 sm:block">
+          {roleLabel}
+        </div>
       </div>
 
       <nav className="mt-4 flex flex-1 flex-col gap-1 overflow-y-auto">
@@ -92,21 +94,30 @@ function AsideContent({
         <div className="text-xs text-slate-400">Sesión</div>
         <div className="mt-2 flex items-center gap-3">
           {safeUser ? (
-            <UserAvatar name={safeUser.name} src={safeUser.avatarUrl} size={40} />
+            <UserAvatar
+              name={safeUser.name}
+              src={safeUser.avatarUrl}
+              size={40}
+            />
           ) : null}
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium text-slate-100">
               {safeUser?.name ?? "Usuario"}
             </div>
-            <div className="text-xs text-slate-400">{safeUser?.email ?? ""}</div>
+            <div className="truncate text-xs text-slate-400">
+              {safeUser?.email ?? ""}
+            </div>
           </div>
         </div>
       </div>
 
-      <form action={logoutAction} className="mt-4 shrink-0 border-t border-white/10 pt-4">
+      <form
+        action={logoutAction}
+        className="mt-4 shrink-0 border-t border-white/10 pt-4"
+      >
         <button
           type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-white/10 cursor-pointer"
         >
           <svg
             aria-hidden
@@ -185,7 +196,7 @@ function MainTopBar({
   drawerId: string;
 }) {
   return (
-    <div className="relative mb-4 flex min-h-[44px] items-center justify-end gap-2 sm:mb-6">
+    <div className="relative mb-6 flex min-h-[44px] items-center justify-end gap-2 sm:mb-8">
       <button
         type="button"
         className="absolute left-0 top-1/2 z-10 inline-flex -translate-y-1/2 items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-100 outline-none transition hover:bg-white/10 focus:ring-2 focus:ring-blue-500/60 lg:hidden"
@@ -199,11 +210,18 @@ function MainTopBar({
 
       <Link
         href="/dashboard"
-        className="absolute left-1/2 top-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-xl px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+        className="absolute left-1/2 top-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0 rounded-xl px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
         aria-label="SAVE IT — inicio"
       >
-        <BrandMark size="sm" variant="bare" decorative />
-        <span className="text-lg font-bold tracking-tight text-blue-600 sm:text-xl">SAVE IT</span>
+        <BrandMark
+          size="lg"
+          variant="bare"
+          decorative
+          className="-my-1 -mr-3 sm:-mr-4"
+        />
+        <span className="text-xl font-bold leading-none tracking-tight text-blue-600 sm:text-2xl">
+          SAVE IT
+        </span>
       </Link>
 
       <div className="relative z-10 ml-auto flex items-center gap-2">
@@ -214,7 +232,11 @@ function MainTopBar({
           aria-label="Ir a perfil"
         >
           {safeUser ? (
-            <UserAvatar name={safeUser.name} src={safeUser.avatarUrl} size={40} />
+            <UserAvatar
+              name={safeUser.name}
+              src={safeUser.avatarUrl}
+              size={40}
+            />
           ) : null}
         </Link>
         <button

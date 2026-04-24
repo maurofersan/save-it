@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getMongoDb } from "@/lib/mongo";
 import { getSpecialtyLabel } from "@/lib/specialtyLabels";
-import type { ImpactType, LessonStatus, ProjectStageKey } from "@/types/domain";
+import type { LessonStatus, ProjectStageKey } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty } from "@/types/models";
 
 const LESSONS = "lessons";
@@ -25,8 +25,8 @@ const LESSON_FULL_PROJECTION = {
   rootCause: 1,
   solution: 1,
   eventDate: 1,
-  impactType: 1,
-  impactKinds: 1,
+  impactTimeHours: 1,
+  impactCostPen: 1,
   projectName: 1,
   projectType: 1,
   area: 1,
@@ -55,8 +55,8 @@ type LessonDoc = {
   rootCause: string;
   solution: string;
   eventDate: string | null;
-  impactType: Lesson["impactType"];
-  impactKinds?: ImpactType[] | null;
+  impactTimeHours?: number;
+  impactCostPen?: number;
   projectName?: string | null;
   projectType?: string | null;
   area?: string | null;
@@ -84,21 +84,12 @@ function normalizeProjectStages(raw: unknown): ProjectStageKey[] {
   );
 }
 
-function normalizeImpactKinds(doc: LessonDoc): ImpactType[] {
-  if (Array.isArray(doc.impactKinds) && doc.impactKinds.length) {
-    const kinds = doc.impactKinds.filter(
-      (x): x is ImpactType => x === "TIME" || x === "COST",
-    );
-    if (kinds.length) return [...new Set(kinds)];
-  }
-  if (doc.impactType === "TIME" || doc.impactType === "COST") {
-    return [doc.impactType];
-  }
-  return ["TIME"];
+function toImpactNumber(v: unknown): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  return 0;
 }
 
 function mapLesson(doc: LessonDoc): Lesson {
-  const impactKinds = normalizeImpactKinds(doc);
   return {
     id: doc._id.toHexString(),
     title: doc.title,
@@ -116,8 +107,8 @@ function mapLesson(doc: LessonDoc): Lesson {
     actionPlan: doc.actionPlan ?? null,
     solution: doc.solution,
     eventDate: doc.eventDate,
-    impactKinds,
-    impactType: impactKinds[0] ?? "TIME",
+    impactTimeHours: toImpactNumber(doc.impactTimeHours),
+    impactCostPen: toImpactNumber(doc.impactCostPen),
     status: doc.status,
     reviewerComment: doc.reviewerComment,
     createdBy: doc.createdBy.toHexString(),
@@ -146,7 +137,8 @@ export async function createLesson(input: {
   actionPlan: string;
   solution: string;
   eventDate: string | null;
-  impactKinds: ImpactType[];
+  impactTimeHours: number;
+  impactCostPen: number;
   createdBy: string;
 }): Promise<Lesson> {
   const db = await getMongoDb();
@@ -167,10 +159,8 @@ export async function createLesson(input: {
     actionPlan: input.actionPlan,
     solution: input.solution,
     eventDate: input.eventDate,
-    impactKinds: input.impactKinds,
-    impactType: input.impactKinds[0] ?? "TIME",
-    /** Conservado en BD por compatibilidad; el formulario ya no lo captura. */
-    impactValue: 0,
+    impactTimeHours: input.impactTimeHours,
+    impactCostPen: input.impactCostPen,
     status: "RECEIVED",
     reviewerComment: null,
     createdBy: new ObjectId(input.createdBy),
@@ -400,10 +390,17 @@ export async function listLessonsForValidation(filters: {
   organizationId: string;
   q?: string;
   status?: LessonStatus;
+  specialtyKey?: LessonWithSpecialty["specialtyKey"];
+  projectType?: string;
+  year?: string;
+  ratingMin?: number;
 }): Promise<LessonWithSpecialty[]> {
   const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
   const status = filters.status;
+  const projectType = (filters.projectType ?? "").trim();
+  const year = (filters.year ?? "").trim();
+  const ratingMin = filters.ratingMin;
   const orgOid = new ObjectId(filters.organizationId);
 
   const pipeline: object[] = [
@@ -430,6 +427,16 @@ export async function listLessonsForValidation(filters: {
 
   const match: Record<string, unknown> = {};
   if (status) match.status = status;
+  if (filters.specialtyKey) match["s.key"] = filters.specialtyKey;
+  if (projectType) {
+    match.projectType = { $regex: escapeRegex(projectType), $options: "i" };
+  }
+  if (/^\d{4}$/.test(year)) {
+    match.createdAt = { $regex: `^${escapeRegex(year)}-` };
+  }
+  if (typeof ratingMin === "number" && Number.isFinite(ratingMin) && ratingMin > 0) {
+    match.ratingAvg = { $gte: ratingMin };
+  }
   if (q) {
     match.$or = [
       { title: { $regex: escapeRegex(q), $options: "i" } },
@@ -477,9 +484,14 @@ export async function searchValidatedLessons(filters: {
   organizationId: string;
   q?: string;
   specialtyKey?: LessonWithSpecialty["specialtyKey"];
+  projectType?: string;
+  year?: string;
+  ratingMin?: number;
 }): Promise<LessonWithSpecialty[]> {
   const db = await getMongoDb();
   const q = (filters.q ?? "").trim();
+  const projectType = (filters.projectType ?? "").trim();
+  const year = (filters.year ?? "").trim();
   const orgOid = new ObjectId(filters.organizationId);
 
   const pipeline: object[] = [
@@ -507,6 +519,15 @@ export async function searchValidatedLessons(filters: {
   const and: object[] = [];
   if (filters.specialtyKey) {
     and.push({ "s.key": filters.specialtyKey });
+  }
+  if (projectType) {
+    and.push({ projectType: { $regex: escapeRegex(projectType), $options: "i" } });
+  }
+  if (/^\d{4}$/.test(year)) {
+    and.push({ createdAt: { $regex: `^${escapeRegex(year)}-` } });
+  }
+  if (typeof filters.ratingMin === "number" && Number.isFinite(filters.ratingMin) && filters.ratingMin > 0) {
+    and.push({ ratingAvg: { $gte: filters.ratingMin } });
   }
   if (q) {
     const rx = escapeRegex(q);

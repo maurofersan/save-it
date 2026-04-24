@@ -11,8 +11,8 @@ const markSizeClass: Record<"sm" | "md" | "lg", string> = {
 /** Sin placa blanca: logo PNG directo (p. ej. login / héroe). */
 const bareSizeClass: Record<"sm" | "md" | "lg", string> = {
   sm: "h-12 w-12",
-  md: "h-20 w-20",
-  lg: "h-32 w-32 sm:h-36 sm:w-36",
+  md: "h-24 w-24",
+  lg: "h-40 w-40 sm:h-44 sm:w-44",
 };
 
 export type BrandMarkSize = keyof typeof markSizeClass;

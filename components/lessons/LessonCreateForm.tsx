@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { DateInput } from "@/components/ui/DateInput";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { Input } from "@/components/ui/Input";
+import { LessonImpactInputs } from "@/components/lessons/LessonImpactInputs";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ActionResult } from "@/types/actions";
@@ -180,7 +181,9 @@ export function LessonCreateForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm text-slate-200">Etapa del proyecto</span>
+            <span className="text-sm font-medium text-slate-100">
+              Etapa del proyecto
+            </span>
             <div
               className={styles.formStages}
               role="group"
@@ -227,26 +230,13 @@ export function LessonCreateForm({
           <div className={styles.formSplit}>
             <div className="grid gap-4">
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm text-slate-200">
+                <span className="text-sm font-medium text-slate-100">
                   ¿Cuál fue el impacto?
                 </span>
-                <div
-                  className={styles.formStages}
-                  role="group"
-                  aria-label="Impacto"
-                >
-                  <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="impactKind" value="TIME" />
-                    <span className="text-sm text-slate-200">Tiempo</span>
-                  </label>
-                  <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="impactKind" value="COST" />
-                    <span className="text-sm text-slate-200">Costo</span>
-                  </label>
-                </div>
-                {fieldErrors?.impactKinds ? (
+                <LessonImpactInputs />
+                {fieldErrors?.impactTimeHours ? (
                   <p className="mt-1 text-xs text-red-300">
-                    {fieldErrors.impactKinds}
+                    {fieldErrors.impactTimeHours}
                   </p>
                 ) : null}
               </div>

@@ -1,20 +1,35 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { setLessonStatusAction } from "@/actions/lessons";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
+import { Modal } from "@/components/ui/Modal";
 import { StatusBadge } from "@/components/ui/Badge";
 import type { ActionResult } from "@/types/actions";
 import type { LessonWithSpecialty } from "@/types/models";
 
 type State = ActionResult<unknown> | null;
 
-function ReviewActions({ lessonId }: { lessonId: string }) {
+function ReviewActions({
+  lessonId,
+  onDone,
+}: {
+  lessonId: string;
+  onDone?: () => void;
+}) {
   const [state, action, pending] = useActionState<State, FormData>(
     setLessonStatusAction,
     null,
   );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state?.ok) return;
+    router.refresh();
+    onDone?.();
+  }, [state, router, onDone]);
 
   return (
     <form action={action} className="flex flex-col gap-2">
@@ -63,6 +78,12 @@ function ReviewActions({ lessonId }: { lessonId: string }) {
 }
 
 export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => lessons.find((x) => x.id === selectedId) ?? null,
+    [lessons, selectedId],
+  );
+
   if (lessons.length === 0) {
     return (
       <Card>
@@ -74,32 +95,152 @@ export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] })
   }
 
   return (
-    <div className="grid gap-4">
-      {lessons.map((l) => (
-        <Card key={l.id}>
-          <CardBody className="grid gap-3 sm:grid-cols-[1fr_260px] sm:items-start">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="text-base font-semibold text-slate-50">{l.title}</div>
-                <StatusBadge status={l.status} />
+    <>
+      <Card>
+        <CardBody>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead className="text-xs text-slate-400">
+                <tr>
+                  <th className="py-2 pr-3">Nombre de la lección</th>
+                  <th className="py-2 pr-3">Área</th>
+                  <th className="py-2 pr-3">Fecha de registro</th>
+                  <th className="py-2 pr-3">Email</th>
+                  <th className="py-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lessons.map((l) => (
+                  <tr
+                    key={l.id}
+                    className="cursor-pointer border-t border-white/10 transition hover:bg-white/5"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedId(l.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setSelectedId(l.id);
+                    }}
+                    aria-label={`Abrir lección ${l.title}`}
+                  >
+                    <td className="py-3 pr-3 font-medium text-slate-100">
+                      <div className="max-w-[420px] truncate">{l.title}</div>
+                    </td>
+                    <td className="py-3 pr-3 text-slate-300">
+                      {l.area ?? "—"}
+                    </td>
+                    <td className="py-3 pr-3 text-slate-300">
+                      {new Date(l.createdAt).toLocaleDateString("es-PE")}
+                    </td>
+                    <td className="py-3 pr-3 text-slate-300">
+                      <div className="max-w-[280px] truncate">{l.createdByEmail}</div>
+                    </td>
+                    <td className="py-3">
+                      <StatusBadge status={l.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-3 text-xs text-slate-400">
+            Tip: haz click en una fila para ver el detalle y validar.
+          </div>
+        </CardBody>
+      </Card>
+
+      <Modal
+        open={Boolean(selected)}
+        title={selected?.title ?? "Lección"}
+        onClose={() => setSelectedId(null)}
+        footer={
+          selected ? (
+            <div className="grid gap-3 sm:grid-cols-[1fr_320px] sm:items-start">
+              <div className="text-sm text-slate-300">
+                Estado actual:{" "}
+                <span className="ml-2 inline-flex align-middle">
+                  <StatusBadge status={selected.status} />
+                </span>
               </div>
-              <div className="mt-1 text-xs text-slate-400">
-                {l.specialtyName} · {l.createdByName} ({l.createdByEmail})
-              </div>
-              <div className="mt-3 line-clamp-3 text-sm text-slate-300">
-                {l.description}
-              </div>
-              {l.reviewerComment ? (
-                <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                  <div className="text-xs text-slate-400">Comentario anterior</div>
-                  <div className="mt-1">{l.reviewerComment}</div>
-                </div>
-              ) : null}
+              <ReviewActions lessonId={selected.id} onDone={() => setSelectedId(null)} />
             </div>
-            <ReviewActions lessonId={l.id} />
-          </CardBody>
-        </Card>
-      ))}
+          ) : null
+        }
+      >
+        {selected ? (
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="text-xs text-slate-400">
+                {selected.specialtyName} · {selected.createdByName} ({selected.createdByEmail})
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Área</div>
+                <div className="mt-1 text-sm text-slate-100">{selected.area ?? "—"}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Fecha de registro</div>
+                <div className="mt-1 text-sm text-slate-100">
+                  {new Date(selected.createdAt).toLocaleString("es-PE")}
+                </div>
+              </div>
+            </div>
+
+            <Section title="¿Qué sucedió?">{selected.description}</Section>
+            <Section title="¿Cuáles fueron las causas?">{selected.rootCause}</Section>
+            {selected.actionsTaken ? (
+              <Section title="¿Qué acciones se tomaron?">{selected.actionsTaken}</Section>
+            ) : null}
+            {selected.lessonLearned ? (
+              <Section title="¿Cuál es la lección aprendida?">{selected.lessonLearned}</Section>
+            ) : null}
+            {selected.actionPlan ? (
+              <Section title="Plan de acción">{selected.actionPlan}</Section>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Impacto</div>
+                <div className="mt-1 text-sm text-slate-100">
+                  {[
+                    selected.impactTimeHours > 0
+                      ? `${selected.impactTimeHours.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`
+                      : null,
+                    selected.impactCostPen > 0
+                      ? `S/ ${selected.impactCostPen.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Proyecto</div>
+                <div className="mt-1 text-sm text-slate-100">
+                  {selected.projectName ?? "—"}
+                </div>
+              </div>
+            </div>
+
+            {selected.reviewerComment ? (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Comentario anterior</div>
+                <div className="mt-1 text-sm text-slate-100">{selected.reviewerComment}</div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </Modal>
+    </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className="text-xs text-slate-400">{title}</div>
+      <div className="mt-1 whitespace-pre-wrap text-sm text-slate-100">{children}</div>
     </div>
   );
 }

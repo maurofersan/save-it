@@ -107,9 +107,16 @@ export default async function LibraryDetailPage({
                   : "—"}
               </Section>
               <Section title="Impacto">
-                {lesson.impactKinds
-                  .map((k) => (k === "TIME" ? "Tiempo" : "Costo"))
-                  .join(" · ")}
+                {[
+                  lesson.impactTimeHours > 0
+                    ? `${lesson.impactTimeHours.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`
+                    : null,
+                  lesson.impactCostPen > 0
+                    ? `S/ ${lesson.impactCostPen.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
               </Section>
               <Section title="Métricas">
                 {lesson.viewsCount} vistas ·{" "}

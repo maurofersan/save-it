@@ -14,28 +14,40 @@ export function RatingStars({
 }) {
   const [avg, setAvg] = useState(initialAvg);
   const [count, setCount] = useState(initialCount);
+  const [optimistic, setOptimistic] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const effectiveAvg = optimistic ?? avg ?? 0;
 
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1">
         {Array.from({ length: 5 }).map((_, i) => {
           const n = i + 1;
-          const filled = n <= Math.round(avg || 0);
+          const filled = n <= Math.round(effectiveAvg);
           return (
             <button
               key={n}
               type="button"
               disabled={pending}
               onClick={() => {
+                const prev = optimistic;
+                setOptimistic(n);
                 startTransition(async () => {
                   const fd = new FormData();
                   fd.set("lessonId", String(lessonId));
                   fd.set("rating", String(n));
-                  const res = await rateLesson(fd);
-                  if (res.ok) {
-                    setAvg(res.data.ratingAvg);
-                    setCount(res.data.ratingCount);
+                  try {
+                    const res = await rateLesson(fd);
+                    if (res.ok) {
+                      setAvg(res.data.ratingAvg);
+                      setCount(res.data.ratingCount);
+                      setOptimistic(null);
+                    } else {
+                      setOptimistic(prev ?? null);
+                    }
+                  } catch {
+                    setOptimistic(prev ?? null);
                   }
                 });
               }}
@@ -50,7 +62,7 @@ export function RatingStars({
         })}
       </div>
       <div className="text-xs text-slate-400">
-        {(avg || 0).toFixed(1)} ({count})
+        {pending ? "Guardando..." : `${(avg || 0).toFixed(1)} (${count})`}
       </div>
     </div>
   );
