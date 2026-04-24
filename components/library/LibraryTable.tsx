@@ -9,6 +9,17 @@ import { listLessonEvidenceAction } from "@/actions/lessons";
 import type { LessonWithSpecialty } from "@/types/models";
 import type { Evidence } from "@/types/models";
 
+/** Fecha ISO de `createdAt` → texto corto (Perú). */
+function formatRegistrationDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<Evidence[] | null>(null);
@@ -42,11 +53,12 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
   return (
     <>
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="text-xs text-slate-400">
             <tr>
               <th className="py-3 pl-4 pr-3">Nombre de la lección</th>
               <th className="py-3 pr-3">Correo</th>
+              <th className="whitespace-nowrap py-3 pr-3">Fecha de registro</th>
               <th className="py-3 pr-3">Puntuación</th>
               <th className="py-3 pr-3">Tipo de proyecto</th>
               <th className="py-3 pr-4 text-right">Vistas</th>
@@ -79,6 +91,9 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
                 </td>
                 <td className="py-3 pr-3 text-slate-300">
                   <div className="max-w-[260px] truncate">{l.createdByEmail}</div>
+                </td>
+                <td className="whitespace-nowrap py-3 pr-3 text-slate-300 tabular-nums">
+                  {formatRegistrationDate(l.createdAt)}
                 </td>
                 <td className="py-3 pr-3 text-slate-300">
                   {(l.ratingAvg || 0).toFixed(1)} ({l.ratingCount})
