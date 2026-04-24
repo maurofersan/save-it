@@ -29,8 +29,8 @@ function closeAblyClientSafely(client: Ably.Realtime | null | undefined): void {
   if (!client) return;
   try {
     client.close();
-  } catch {
-    // ignore
+  } catch (error: unknown) {
+    console.error(error);
   }
 }
 
@@ -266,14 +266,10 @@ export function NotificationBell({
         type="button"
         className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-full border border-white/10 bg-white/5 text-slate-200 outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/60 cursor-pointer"
         title={
-          unread > 0
-            ? `Notificaciones (${unread} sin leer)`
-            : "Notificaciones"
+          unread > 0 ? `Notificaciones (${unread} sin leer)` : "Notificaciones"
         }
         aria-label={
-          unread > 0
-            ? `Notificaciones, ${unread} sin leer`
-            : "Notificaciones"
+          unread > 0 ? `Notificaciones, ${unread} sin leer` : "Notificaciones"
         }
         aria-expanded={open}
         aria-haspopup="true"
