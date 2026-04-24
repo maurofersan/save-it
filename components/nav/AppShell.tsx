@@ -41,7 +41,7 @@ export async function AppShell({
       links={links}
       safeUser={
         safeUser
-          ? { name: safeUser.name, email: safeUser.email }
+          ? { name: safeUser.name, email: safeUser.email, avatarUrl: safeUser.avatarUrl }
           : null
       }
       orgBrand={

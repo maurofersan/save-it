@@ -22,8 +22,9 @@ export type User = {
   name: string;
   email: string;
   phone: string | null;
-  company: string | null;
   title: string | null;
+  /** Foto de perfil (Cloudinary u otra URL https). */
+  avatarUrl: string | null;
   role: UserRole;
   /** Tenant: all app data is scoped to this organization. */
   organizationId: Id | null;

@@ -5,12 +5,20 @@ import { updateProfileAction } from "@/actions/users";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { ProfilePhotoPicker } from "@/components/profile/ProfilePhotoPicker";
 import type { ActionResult } from "@/types/actions";
 import type { User } from "@/types/models";
 
 type State = ActionResult<User> | null;
 
-export function ProfileForm({ user }: { user: User }) {
+export function ProfileForm({
+  user,
+  organizationName,
+}: {
+  user: User;
+  /** `organizations.name` vía `organizationId` (solo lectura en el formulario). */
+  organizationName: string;
+}) {
   const [state, action, pending] = useActionState<State, FormData>(
     updateProfileAction,
     null,
@@ -20,15 +28,24 @@ export function ProfileForm({ user }: { user: User }) {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="text-sm font-semibold text-blue-200">Perfil</div>
-        <div className="mt-1 text-xl font-semibold text-slate-50">Tu información</div>
-        <div className="mt-1 text-sm text-slate-300">
-          Edita nombre, correo (solo lectura) y datos de contacto.
-        </div>
-      </CardHeader>
-      <CardBody>
-        <form action={action} className="grid gap-4">
+      <form action={action} className="grid">
+        <CardHeader>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-blue-200">Perfil</div>
+              <div className="mt-1 text-xl font-semibold text-slate-50">Tu información</div>
+              <div className="mt-1 text-sm text-slate-300">
+                Edita nombre y datos de contacto. Correo y empresa son de solo lectura.
+              </div>
+            </div>
+            <ProfilePhotoPicker
+              fileInputName="avatar"
+              userName={effectiveUser.name}
+              defaultUrl={effectiveUser.avatarUrl}
+            />
+          </div>
+        </CardHeader>
+        <CardBody className="grid gap-4">
           <Input
             name="name"
             label="Nombre"
@@ -45,10 +62,10 @@ export function ProfileForm({ user }: { user: User }) {
               error={fieldErrors?.phone}
             />
             <Input
-              name="company"
               label="Empresa"
-              defaultValue={effectiveUser.company ?? ""}
-              error={fieldErrors?.company}
+              defaultValue={organizationName}
+              disabled
+              title="Nombre de tu organización (desde la base de datos)"
             />
           </div>
           <Input
@@ -71,12 +88,11 @@ export function ProfileForm({ user }: { user: User }) {
 
           <div className="flex items-center gap-2">
             <Button type="submit" disabled={pending}>
-              {pending ? "Guardando..." : "Guardar cambios"}
+              {pending ? "Guardando…" : "Guardar cambios"}
             </Button>
           </div>
-        </form>
-      </CardBody>
+        </CardBody>
+      </form>
     </Card>
   );
 }
-

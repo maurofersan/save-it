@@ -53,11 +53,24 @@ async function uploadStream(
   });
 }
 
-export async function uploadImage(image: File, baseName: string): Promise<string> {
+/** Carpeta de avatares (Cloudinary: Media Library bajo `nextjs-save-it/profile`). */
+export const CLOUDINARY_PROFILE_FOLDER = "nextjs-save-it/profile" as const;
+
+export type UploadImageOptions = {
+  /** Carpeta lógica en Cloudinary; por defecto `nextjs-save-it` (misma que antes). */
+  folder?: string;
+};
+
+export async function uploadImage(
+  image: File,
+  baseName: string,
+  options?: UploadImageOptions,
+): Promise<string> {
   const imageData = await image.arrayBuffer();
   const publicId = sanitizePublicId(baseName);
+  const folder = options?.folder ?? "nextjs-save-it";
   const result = await uploadStream(Buffer.from(imageData), {
-    folder: "nextjs-save-it",
+    folder,
     publicId,
     resourceType: "image",
   });

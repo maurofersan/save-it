@@ -2,7 +2,7 @@
 
 import { logoutAction } from "@/actions/auth";
 import { BrandMark } from "@/components/brand/BrandMark";
-import { initialsFromName } from "@/lib/initials";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 
@@ -45,7 +45,7 @@ function AsideContent({
 }: {
   links: NavLinkItem[];
   activePath: string;
-  safeUser: { name: string; email: string } | null;
+  safeUser: { name: string; email: string; avatarUrl: string | null } | null;
   orgBrand: { name: string; logoUrl: string | null } | null;
   roleLabel: string;
   onNavigate?: () => void;
@@ -90,8 +90,17 @@ function AsideContent({
 
       <div className="mt-4 shrink-0 rounded-xl border border-white/10 bg-white/5 p-3">
         <div className="text-xs text-slate-400">Sesión</div>
-        <div className="mt-1 text-sm font-medium text-slate-100">{safeUser?.name ?? "Usuario"}</div>
-        <div className="text-xs text-slate-400">{safeUser?.email ?? ""}</div>
+        <div className="mt-2 flex items-center gap-3">
+          {safeUser ? (
+            <UserAvatar name={safeUser.name} src={safeUser.avatarUrl} size={40} />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-slate-100">
+              {safeUser?.name ?? "Usuario"}
+            </div>
+            <div className="text-xs text-slate-400">{safeUser?.email ?? ""}</div>
+          </div>
+        </div>
       </div>
 
       <form action={logoutAction} className="mt-4 shrink-0 border-t border-white/10 pt-4">
@@ -169,14 +178,12 @@ function MainTopBar({
   setOpen,
   drawerId,
 }: {
-  safeUser: { name: string; email: string } | null;
+  safeUser: { name: string; email: string; avatarUrl: string | null } | null;
   notificationCount: number;
   open: boolean;
   setOpen: (v: boolean | ((b: boolean) => boolean)) => void;
   drawerId: string;
 }) {
-  const initials = safeUser ? initialsFromName(safeUser.name) : "?";
-
   return (
     <div className="relative mb-4 flex min-h-[44px] items-center justify-end gap-2 sm:mb-6">
       <button
@@ -202,11 +209,13 @@ function MainTopBar({
       <div className="relative z-10 ml-auto flex items-center gap-2">
         <Link
           href="/profile"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm font-semibold text-slate-700 outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/60"
+          className="shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-full"
           title="Perfil"
           aria-label="Ir a perfil"
         >
-          {initials}
+          {safeUser ? (
+            <UserAvatar name={safeUser.name} src={safeUser.avatarUrl} size={40} />
+          ) : null}
         </Link>
         <button
           type="button"
@@ -238,7 +247,7 @@ export function AppShellClient({
   children: ReactNode;
   activePath: string;
   links: NavLinkItem[];
-  safeUser: { name: string; email: string } | null;
+  safeUser: { name: string; email: string; avatarUrl: string | null } | null;
   orgBrand: { name: string; logoUrl: string | null } | null;
   roleLabel: string;
   /** Contador para badge de campana (0 = oculto). */

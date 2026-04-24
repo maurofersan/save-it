@@ -10,8 +10,8 @@ type UserDoc = {
   name: string;
   email: string;
   phone: string | null;
-  company: string | null;
   title: string | null;
+  avatarUrl?: string | null;
   role: UserRole;
   /** Present for multi-tenant users; null only for legacy accounts. */
   organizationId?: ObjectId | null;
@@ -27,8 +27,8 @@ function mapUser(doc: Omit<UserDoc, "passwordSaltHex" | "passwordHashHex">): Use
     name: doc.name,
     email: doc.email,
     phone: doc.phone,
-    company: doc.company,
     title: doc.title,
+    avatarUrl: doc.avatarUrl ?? null,
     role: doc.role,
     organizationId: doc.organizationId
       ? doc.organizationId.toHexString()
@@ -121,8 +121,8 @@ export async function createUser(input: {
     name: input.name,
     email: input.email.toLowerCase(),
     phone: null,
-    company: null,
     title: null,
+    avatarUrl: null,
     role: input.role,
     organizationId: new ObjectId(input.organizationId),
     passwordSaltHex: input.passwordSaltHex,
@@ -137,21 +137,32 @@ export async function createUser(input: {
 
 export async function updateUserProfile(
   userId: string,
-  input: { name: string; phone: string | null; company: string | null; title: string | null },
+  input: {
+    name: string;
+    phone: string | null;
+    title: string | null;
+    /** Si se pasa, actualiza la URL del avatar. Omite el campo en `$set` si `undefined`. */
+    avatarUrl?: string | null;
+  },
 ): Promise<User> {
   const db = await getMongoDb();
   const oid = new ObjectId(userId);
   const now = new Date().toISOString();
+  const $set: Record<string, unknown> = {
+    name: input.name,
+    phone: input.phone,
+    title: input.title,
+    updatedAt: now,
+  };
+  if (input.avatarUrl !== undefined) {
+    $set.avatarUrl = input.avatarUrl;
+  }
   const r = await db.collection<UserDoc>(COL).updateOne(
     { _id: oid },
     {
-      $set: {
-        name: input.name,
-        phone: input.phone,
-        company: input.company,
-        title: input.title,
-        updatedAt: now,
-      },
+      $set,
+      /** Migra documentos antiguos: el nombre de empresa sale de `organizations`. */
+      $unset: { company: "" },
     },
   );
   if (r.matchedCount === 0) throw new Error("User not found");
@@ -161,7 +172,7 @@ export async function updateUserProfile(
 }
 
 export async function listMembers(organizationId: string): Promise<
-  Array<Pick<User, "id" | "name" | "email" | "title" | "role">>
+  Array<Pick<User, "id" | "name" | "email" | "title" | "role" | "avatarUrl">>
 > {
   const db = await getMongoDb();
   const oid = new ObjectId(organizationId);
@@ -169,7 +180,7 @@ export async function listMembers(organizationId: string): Promise<
     .collection<UserDoc>(COL)
     .find(
       { organizationId: oid },
-      { projection: { _id: 1, name: 1, email: 1, title: 1, role: 1 } },
+      { projection: { _id: 1, name: 1, email: 1, title: 1, role: 1, avatarUrl: 1 } },
     )
     .sort({ role: -1, name: 1 })
     .toArray();
@@ -179,5 +190,6 @@ export async function listMembers(organizationId: string): Promise<
     email: r.email,
     title: r.title,
     role: r.role,
+    avatarUrl: r.avatarUrl ?? null,
   }));
 }
