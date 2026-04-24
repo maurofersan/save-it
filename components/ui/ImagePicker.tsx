@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import classes from "./ImagePicker.module.css";
+import { Button } from "./Button";
 
 const DEFAULT_ATTACHMENT_ACCEPT =
   "image/png,image/jpeg,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.pdf,.doc,.docx,.xls,.xlsx";
@@ -60,15 +61,15 @@ export function ImagePicker({
     setIsImageSelection(isImg);
     if (isImg) {
       const fileReader = new FileReader();
-      fileReader.onload = () =>
-        setPickedImage(String(fileReader.result ?? ""));
+      fileReader.onload = () => setPickedImage(String(fileReader.result ?? ""));
       fileReader.readAsDataURL(file);
     } else {
       setPickedImage(null);
     }
   };
 
-  const chooseLabel = mode === "attachment" ? "Elegir archivo" : "Elegir imagen";
+  const chooseLabel =
+    mode === "attachment" ? "Elegir archivo" : "Elegir imagen";
   const emptyCopy =
     mode === "attachment"
       ? "Aún no seleccionaste un archivo."
@@ -94,7 +95,9 @@ export function ImagePicker({
               <span className={classes.imagePicker__fileIcon} aria-hidden>
                 📎
               </span>
-              <span className={classes.imagePicker__fileName}>{pickedName}</span>
+              <span className={classes.imagePicker__fileName}>
+                {pickedName}
+              </span>
             </div>
           ) : (
             <p className={classes.imagePicker__previewText}>{emptyCopy}</p>
@@ -112,13 +115,9 @@ export function ImagePicker({
             ref={inputRef}
             onChange={handleFileChange}
           />
-          <button
-            type="button"
-            className={classes.imagePicker__button}
-            onClick={handlePick}
-          >
+          <Button type="button" onClick={handlePick}>
             {chooseLabel}
-          </button>
+          </Button>
           {resolvedHint ? (
             <div className={classes.imagePicker__hint}>{resolvedHint}</div>
           ) : null}

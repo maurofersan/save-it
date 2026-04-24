@@ -51,15 +51,6 @@
   color: rgb(148 163 184);
 }
 
-.fieldGroupTitle {
-  margin-bottom: 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgb(148 163 184);
-}
-
 .formGrid4 {
   display: grid;
   gap: 1rem;
@@ -105,7 +96,8 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.875rem;
-  color: rgb(203 213 225);
+  line-height: 1.25rem;
+  color: rgb(226 232 240);
   cursor: pointer;
 }
 

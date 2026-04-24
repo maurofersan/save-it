@@ -27,7 +27,6 @@ const LESSON_FULL_PROJECTION = {
   eventDate: 1,
   impactType: 1,
   impactKinds: 1,
-  impactValue: 1,
   projectName: 1,
   projectType: 1,
   area: 1,
@@ -58,7 +57,6 @@ type LessonDoc = {
   eventDate: string | null;
   impactType: Lesson["impactType"];
   impactKinds?: ImpactType[] | null;
-  impactValue: number;
   projectName?: string | null;
   projectType?: string | null;
   area?: string | null;
@@ -120,7 +118,6 @@ function mapLesson(doc: LessonDoc): Lesson {
     eventDate: doc.eventDate,
     impactKinds,
     impactType: impactKinds[0] ?? "TIME",
-    impactValue: doc.impactValue,
     status: doc.status,
     reviewerComment: doc.reviewerComment,
     createdBy: doc.createdBy.toHexString(),
@@ -150,7 +147,6 @@ export async function createLesson(input: {
   solution: string;
   eventDate: string | null;
   impactKinds: ImpactType[];
-  impactValue: number;
   createdBy: string;
 }): Promise<Lesson> {
   const db = await getMongoDb();
@@ -173,7 +169,8 @@ export async function createLesson(input: {
     eventDate: input.eventDate,
     impactKinds: input.impactKinds,
     impactType: input.impactKinds[0] ?? "TIME",
-    impactValue: input.impactValue,
+    /** Conservado en BD por compatibilidad; el formulario ya no lo captura. */
+    impactValue: 0,
     status: "RECEIVED",
     reviewerComment: null,
     createdBy: new ObjectId(input.createdBy),

@@ -72,7 +72,6 @@ export type Lesson = {
   impactKinds: ImpactType[];
   /** Primera dimensión de impacto (compatibilidad con registros y vistas antiguas). */
   impactType: ImpactType;
-  impactValue: number;
   status: LessonStatus;
   reviewerComment: string | null;
   createdBy: Id;

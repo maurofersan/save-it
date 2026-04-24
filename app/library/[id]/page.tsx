@@ -109,8 +109,7 @@ export default async function LibraryDetailPage({
               <Section title="Impacto">
                 {lesson.impactKinds
                   .map((k) => (k === "TIME" ? "Tiempo" : "Costo"))
-                  .join(" · ")}{" "}
-                · Valor: {lesson.impactValue}
+                  .join(" · ")}
               </Section>
               <Section title="Métricas">
                 {lesson.viewsCount} vistas ·{" "}

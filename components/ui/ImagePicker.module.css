@@ -5,8 +5,11 @@
 }
 
 .imagePicker__label {
+  display: block;
+  margin-bottom: 0.125rem;
   font-size: 0.875rem;
-  color: rgb(226 232 240); /* slate-200 */
+  line-height: 1.25rem;
+  color: #1e293b;
 }
 
 .imagePicker__controls {
@@ -27,8 +30,8 @@
   max-width: 10rem;
   aspect-ratio: 1 / 1;
   border-radius: 1rem;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(6, 84, 141, 0.18);
+  background: rgba(255, 255, 255);
   position: relative;
   overflow: hidden;
   display: grid;
@@ -93,7 +96,9 @@
   font: inherit;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .imagePicker__button:hover,
@@ -112,4 +117,3 @@
   font-size: 0.75rem;
   color: rgb(254 202 202); /* red-200 */
 }
-

@@ -55,7 +55,6 @@ const createLessonSchema = z.object({
   impactKinds: z
     .array(z.enum(["TIME", "COST"]))
     .min(1, "Marca al menos tiempo o costo"),
-  impactValue: z.coerce.number().min(0).max(1_000_000),
 });
 
 export async function getLessonFormData(): Promise<{
@@ -122,7 +121,6 @@ export async function createLessonAction(
     actionPlan: String(formData.get("actionPlan") ?? ""),
     eventDate: String(formData.get("eventDate") ?? ""),
     impactKinds,
-    impactValue: formData.get("impactValue") ?? 0,
   };
 
   const parsed = createLessonSchema.safeParse(raw);
@@ -159,7 +157,6 @@ export async function createLessonAction(
     solution: parsed.data.lessonLearned,
     eventDate: parsed.data.eventDate,
     impactKinds: parsed.data.impactKinds,
-    impactValue: parsed.data.impactValue,
     createdBy: user.id,
   });
 

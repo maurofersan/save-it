@@ -64,8 +64,9 @@ export function LessonCreateForm({
         </CardHeader>
         <CardBody className="flex flex-col gap-4">
           <p className="text-sm leading-6 text-slate-300">
-            Tu usuario tiene rol de residente. Puedes revisar y validar lecciones
-            en <span className="text-slate-100">Validar</span> cuando corresponda.
+            Tu usuario tiene rol de residente. Puedes revisar y validar
+            lecciones en <span className="text-slate-100">Validar</span> cuando
+            corresponda.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => router.push("/dashboard")}>
@@ -92,7 +93,8 @@ export function LessonCreateForm({
           Formato de lecciones aprendidas
         </div>
         <div className="mt-1 text-sm text-slate-300">
-          Completa los campos y adjunta evidencia (imagen o documento) si aplica.
+          Completa los campos y adjunta evidencia (imagen o documento) si
+          aplica.
         </div>
       </CardHeader>
       <CardBody>
@@ -107,7 +109,9 @@ export function LessonCreateForm({
               />
             ) : (
               <div className={styles.orgLogoPlaceholder}>
-                <span className={styles.orgLogoPlaceholderTitle}>Logo empresa</span>
+                <span className={styles.orgLogoPlaceholderTitle}>
+                  Logo empresa
+                </span>
                 <span className={styles.orgLogoPlaceholderHint}>
                   Configura el logo en ajustes de la organización para mostrarlo
                   aquí.
@@ -175,18 +179,24 @@ export function LessonCreateForm({
             />
           </div>
 
-          <div>
-            <div className={styles.fieldGroupTitle}>Etapa del proyecto</div>
-            <div className={styles.formStages} role="group" aria-label="Etapa del proyecto">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-slate-200">Etapa del proyecto</span>
+            <div
+              className={styles.formStages}
+              role="group"
+              aria-label="Etapa del proyecto"
+            >
               {PROJECT_STAGES.map((s) => (
                 <label key={s.value} className={styles.checkboxLabel}>
                   <input type="checkbox" name="projectStages" value={s.value} />
-                  <span>{s.label}</span>
+                  <span className="text-sm text-slate-200">{s.label}</span>
                 </label>
               ))}
             </div>
             {fieldErrors?.projectStages ? (
-              <p className="mt-1 text-xs text-red-300">{fieldErrors.projectStages}</p>
+              <p className="mt-1 text-xs text-red-300">
+                {fieldErrors.projectStages}
+              </p>
             ) : null}
           </div>
 
@@ -216,31 +226,30 @@ export function LessonCreateForm({
 
           <div className={styles.formSplit}>
             <div className="grid gap-4">
-              <div>
-                <div className={styles.fieldGroupTitle}>¿Cuál fue el impacto?</div>
-                <div className={styles.formStages}>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm text-slate-200">
+                  ¿Cuál fue el impacto?
+                </span>
+                <div
+                  className={styles.formStages}
+                  role="group"
+                  aria-label="Impacto"
+                >
                   <label className={styles.checkboxLabel}>
                     <input type="checkbox" name="impactKind" value="TIME" />
-                    <span>Tiempo</span>
+                    <span className="text-sm text-slate-200">Tiempo</span>
                   </label>
                   <label className={styles.checkboxLabel}>
                     <input type="checkbox" name="impactKind" value="COST" />
-                    <span>Costo</span>
+                    <span className="text-sm text-slate-200">Costo</span>
                   </label>
                 </div>
                 {fieldErrors?.impactKinds ? (
-                  <p className="mt-1 text-xs text-red-300">{fieldErrors.impactKinds}</p>
+                  <p className="mt-1 text-xs text-red-300">
+                    {fieldErrors.impactKinds}
+                  </p>
                 ) : null}
               </div>
-              <Input
-                name="impactValue"
-                label="Valor del impacto"
-                type="number"
-                step="0.01"
-                placeholder="0"
-                error={fieldErrors?.impactValue}
-                required
-              />
               <Textarea
                 name="actionPlan"
                 label="Plan de acción"
