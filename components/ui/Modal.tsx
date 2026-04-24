@@ -5,6 +5,7 @@ import { useEffect } from "react";
 export function Modal({
   open,
   title,
+  kind = "Validación",
   onClose,
   children,
   footer,
@@ -12,6 +13,7 @@ export function Modal({
 }: {
   open: boolean;
   title: string;
+  kind?: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -50,7 +52,7 @@ export function Modal({
           <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
             <div className="min-w-0">
               <div className="text-sm font-semibold text-blue-200">
-                Validación
+                {kind}
               </div>
               <div className="mt-1 truncate text-lg font-semibold text-slate-50">
                 {title}

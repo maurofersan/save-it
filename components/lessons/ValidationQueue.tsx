@@ -178,6 +178,7 @@ export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] })
           setSelectedId(null);
           setEvidence(null);
         }}
+        kind="Validación"
         footer={
           selected ? (
             <div className="grid gap-3 sm:grid-cols-[1fr_320px] sm:items-start">

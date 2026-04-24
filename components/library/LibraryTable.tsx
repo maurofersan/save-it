@@ -1,18 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { StatusBadge } from "@/components/ui/Badge";
 import { RatingStars } from "@/components/library/RatingStars";
 import { ViewCounter } from "@/components/library/ViewCounter";
+import { listLessonEvidenceAction } from "@/actions/lessons";
 import type { LessonWithSpecialty } from "@/types/models";
+import type { Evidence } from "@/types/models";
 
 export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [evidence, setEvidence] = useState<Evidence[] | null>(null);
+  const [evidencePending, startEvidence] = useTransition();
   const selected = useMemo(
     () => lessons.find((x) => x.id === selectedId) ?? null,
     [lessons, selectedId],
   );
+
+  useEffect(() => {
+    if (!selectedId) return;
+    let cancelled = false;
+    startEvidence(async () => {
+      const res = await listLessonEvidenceAction(selectedId);
+      if (cancelled) return;
+      setEvidence(res.ok ? res.data : []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId]);
 
   if (lessons.length === 0) {
     return (
@@ -42,9 +59,15 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
                 className="cursor-pointer border-t border-white/10 transition hover:bg-white/5"
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedId(l.id)}
+                onClick={() => {
+                  setEvidence(null);
+                  setSelectedId(l.id);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setSelectedId(l.id);
+                  if (e.key === "Enter" || e.key === " ") {
+                    setEvidence(null);
+                    setSelectedId(l.id);
+                  }
                 }}
                 aria-label={`Abrir lección ${l.title}`}
               >
@@ -73,7 +96,11 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
       <Modal
         open={Boolean(selected)}
         title={selected?.title ?? "Lección"}
-        onClose={() => setSelectedId(null)}
+        kind="Visualización"
+        onClose={() => {
+          setSelectedId(null);
+          setEvidence(null);
+        }}
         footer={
           selected ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -130,6 +157,54 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
                 .filter(Boolean)
                 .join(" · ") || "—"}
             </Info>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="text-xs text-slate-400">Evidencias</div>
+              <div className="mt-2">
+                {evidencePending ? (
+                  <div className="text-sm text-slate-300">Cargando evidencias…</div>
+                ) : !evidence || evidence.length === 0 ? (
+                  <div className="text-sm text-slate-300">Sin evidencias.</div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {evidence.map((e) =>
+                      e.type === "DOCUMENT" ? (
+                        <a
+                          key={e.id}
+                          href={e.url}
+                          className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-blue-200 transition hover:bg-white/10"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className="text-2xl" aria-hidden>
+                            📎
+                          </span>
+                          <span className="font-medium">Ver o descargar documento</span>
+                          <span className="break-all text-xs text-slate-400">{e.url}</span>
+                        </a>
+                      ) : (
+                        <a
+                          key={e.id}
+                          href={e.url}
+                          className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <div className="relative aspect-video w-full">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={e.url}
+                              alt="Evidencia"
+                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                            />
+                          </div>
+                        </a>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         ) : null}
       </Modal>
