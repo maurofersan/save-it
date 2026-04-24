@@ -16,6 +16,10 @@ import {
   upsertLessonRating,
 } from "@/services/lessonService";
 import { getOrganizationById } from "@/services/organizationService";
+import {
+  notifyLessonCreatedEvent,
+  notifyLessonUpdatedEvent,
+} from "@/services/lessonNotificationService";
 import { listSpecialties } from "@/services/specialtyService";
 import type { ActionResult } from "@/types/actions";
 import type { LessonStatus, ProjectStageKey, SpecialtyKey } from "@/types/domain";
@@ -190,6 +194,8 @@ export async function createLessonAction(
     }
   }
 
+  await notifyLessonCreatedEvent(lesson, user.id);
+
   revalidatePath("/dashboard");
   revalidatePath("/validate");
   revalidatePath("/library");
@@ -224,6 +230,7 @@ export async function setLessonStatusAction(
     status,
     reviewerComment,
   });
+  await notifyLessonUpdatedEvent(updated, user.id);
   revalidatePath("/validate");
   revalidatePath("/library");
   revalidatePath("/dashboard");

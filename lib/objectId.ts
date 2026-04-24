@@ -1,8 +1,9 @@
 import { ObjectId } from "mongodb";
+import { isValidObjectIdString as isHex24 } from "@/lib/objectIdString";
 
 /** 24-char hex ObjectId string (strict). */
 export function isValidObjectIdString(id: string): boolean {
-  return /^[a-f0-9]{24}$/i.test(id) && ObjectId.isValid(id);
+  return isHex24(id) && ObjectId.isValid(id);
 }
 
 export function toObjectId(id: string): ObjectId {

@@ -8,13 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx scripts/mongo-seed.ts",
-    "db:fix-user-email-index": "tsx scripts/run-ensure-user-email-index.ts"
+    "db:fix-user-email-index": "tsx scripts/run-ensure-user-email-index.ts",
+    "db:ensure-notification-indexes": "tsx scripts/run-ensure-notification-indexes.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.0.0",
     "@mui/x-date-pickers": "^9.0.2",
+    "ably": "^2.21.0",
     "cloudinary": "^2.9.0",
     "dayjs": "^1.11.20",
     "mongodb": "^7.1.1",

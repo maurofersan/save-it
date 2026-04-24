@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { getOrganizationById } from "@/services/organizationService";
+import { countUnreadForUser } from "@/services/notificationService";
 import type { User } from "@/types/models";
 import { AppShellClient } from "@/components/nav/AppShellClient";
 
@@ -21,6 +22,11 @@ export async function AppShell({
     safeUser?.organizationId != null
       ? await getOrganizationById(safeUser.organizationId)
       : null;
+
+  let initialUnread = 0;
+  if (safeUser?.organizationId) {
+    initialUnread = await countUnreadForUser(safeUser.id, safeUser.organizationId);
+  }
 
   const links = [
     { href: "/dashboard", label: "Inicio" },
@@ -50,7 +56,16 @@ export async function AppShell({
           : null
       }
       roleLabel={roleLabel}
-      notificationCount={0}
+      notification={
+        safeUser?.organizationId
+          ? {
+              userId: safeUser.id,
+              organizationId: safeUser.organizationId,
+              userRole: safeUser.role,
+              initialUnread,
+            }
+          : null
+      }
     >
       {children}
     </AppShellClient>

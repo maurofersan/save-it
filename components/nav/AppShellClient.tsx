@@ -2,7 +2,9 @@
 
 import { logoutAction } from "@/actions/auth";
 import { BrandMark } from "@/components/brand/BrandMark";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import type { UserRole } from "@/types/domain";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 
@@ -164,33 +166,20 @@ function HamburgerIcon({ open }: { open: boolean }) {
   );
 }
 
-function BellIcon() {
-  return (
-    <svg
-      aria-hidden
-      className="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  );
-}
-
 function MainTopBar({
   safeUser,
-  notificationCount,
+  notification,
   open,
   setOpen,
   drawerId,
 }: {
   safeUser: { name: string; email: string; avatarUrl: string | null } | null;
-  notificationCount: number;
+  notification: {
+    userId: string;
+    organizationId: string;
+    userRole: UserRole;
+    initialUnread: number;
+  } | null;
   open: boolean;
   setOpen: (v: boolean | ((b: boolean) => boolean)) => void;
   drawerId: string;
@@ -239,19 +228,14 @@ function MainTopBar({
             />
           ) : null}
         </Link>
-        <button
-          type="button"
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-600 outline-none transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/60"
-          title="Notificaciones"
-          aria-label="Notificaciones"
-        >
-          <BellIcon />
-          {notificationCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </span>
-          ) : null}
-        </button>
+        {notification ? (
+          <NotificationBell
+            userId={notification.userId}
+            organizationId={notification.organizationId}
+            userRole={notification.userRole}
+            initialUnread={notification.initialUnread}
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -264,7 +248,7 @@ export function AppShellClient({
   safeUser,
   orgBrand,
   roleLabel,
-  notificationCount = 0,
+  notification = null,
 }: {
   children: ReactNode;
   activePath: string;
@@ -272,8 +256,12 @@ export function AppShellClient({
   safeUser: { name: string; email: string; avatarUrl: string | null } | null;
   orgBrand: { name: string; logoUrl: string | null } | null;
   roleLabel: string;
-  /** Contador para badge de campana (0 = oculto). */
-  notificationCount?: number;
+  notification: {
+    userId: string;
+    organizationId: string;
+    userRole: UserRole;
+    initialUnread: number;
+  } | null;
 }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
@@ -319,7 +307,7 @@ export function AppShellClient({
           <div className="min-w-0">
             <MainTopBar
               safeUser={safeUser}
-              notificationCount={notificationCount}
+              notification={notification}
               open={open}
               setOpen={setOpen}
               drawerId={drawerId}
