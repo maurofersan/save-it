@@ -68,8 +68,8 @@ export type Lesson = {
   /** Resumen legado / búsqueda; en registros nuevos suele coincidir con `lessonLearned`. */
   solution: string;
   eventDate: string | null;
-  /** Horas de impacto (decimal). */
-  impactTimeHours: number;
+  /** Impacto en tiempo (texto libre). */
+  impactTime: string | null;
   /** Monto de impacto en soles (PEN), decimal. */
   impactCostPen: number;
   status: LessonStatus;

@@ -162,9 +162,7 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
 
             <Info title="Impacto">
               {[
-                selected.impactTimeHours > 0
-                  ? `${selected.impactTimeHours.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`
-                  : null,
+                selected.impactTime ? selected.impactTime : null,
                 selected.impactCostPen > 0
                   ? `S/ ${selected.impactCostPen.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`
                   : null,

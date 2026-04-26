@@ -237,9 +237,7 @@ export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] })
                 <div className="text-xs text-slate-400">Impacto</div>
                 <div className="mt-1 text-sm text-slate-100">
                   {[
-                    selected.impactTimeHours > 0
-                      ? `${selected.impactTimeHours.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`
-                      : null,
+                    selected.impactTime ? selected.impactTime : null,
                     selected.impactCostPen > 0
                       ? `S/ ${selected.impactCostPen.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`
                       : null,

@@ -108,9 +108,7 @@ export default async function LibraryDetailPage({
               </Section>
               <Section title="Impacto">
                 {[
-                  lesson.impactTimeHours > 0
-                    ? `${lesson.impactTimeHours.toLocaleString("es-PE", { maximumFractionDigits: 2 })} h`
-                    : null,
+                  lesson.impactTime ? lesson.impactTime : null,
                   lesson.impactCostPen > 0
                     ? `S/ ${lesson.impactCostPen.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
                     : null,

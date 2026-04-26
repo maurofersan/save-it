@@ -25,6 +25,7 @@ const LESSON_FULL_PROJECTION = {
   rootCause: 1,
   solution: 1,
   eventDate: 1,
+  impactTime: 1,
   impactTimeHours: 1,
   impactCostPen: 1,
   projectName: 1,
@@ -55,6 +56,7 @@ type LessonDoc = {
   rootCause: string;
   solution: string;
   eventDate: string | null;
+  impactTime?: string | null;
   impactTimeHours?: number;
   impactCostPen?: number;
   projectName?: string | null;
@@ -89,6 +91,15 @@ function toImpactNumber(v: unknown): number {
   return 0;
 }
 
+function toImpactText(doc: Pick<LessonDoc, "impactTime" | "impactTimeHours">): string | null {
+  const t = typeof doc.impactTime === "string" ? doc.impactTime.trim() : "";
+  if (t) return t;
+  if (typeof doc.impactTimeHours === "number" && Number.isFinite(doc.impactTimeHours) && doc.impactTimeHours > 0) {
+    return String(doc.impactTimeHours);
+  }
+  return null;
+}
+
 function mapLesson(doc: LessonDoc): Lesson {
   return {
     id: doc._id.toHexString(),
@@ -107,7 +118,7 @@ function mapLesson(doc: LessonDoc): Lesson {
     actionPlan: doc.actionPlan ?? null,
     solution: doc.solution,
     eventDate: doc.eventDate,
-    impactTimeHours: toImpactNumber(doc.impactTimeHours),
+    impactTime: toImpactText(doc),
     impactCostPen: toImpactNumber(doc.impactCostPen),
     status: doc.status,
     reviewerComment: doc.reviewerComment,
@@ -137,7 +148,7 @@ export async function createLesson(input: {
   actionPlan: string;
   solution: string;
   eventDate: string | null;
-  impactTimeHours: number;
+  impactTime: string | null;
   impactCostPen: number;
   createdBy: string;
 }): Promise<Lesson> {
@@ -159,7 +170,7 @@ export async function createLesson(input: {
     actionPlan: input.actionPlan,
     solution: input.solution,
     eventDate: input.eventDate,
-    impactTimeHours: input.impactTimeHours,
+    impactTime: input.impactTime,
     impactCostPen: input.impactCostPen,
     status: "RECEIVED",
     reviewerComment: null,

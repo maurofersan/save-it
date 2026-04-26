@@ -60,12 +60,12 @@ const createLessonSchema = z
       .trim()
       .min(1, "Fecha de suceso requerida")
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
-    impactTimeHours: z.number().min(0).max(1_000_000_000),
+    impactTime: z.string().trim().max(120),
     impactCostPen: z.number().min(0).max(1e15),
   })
-  .refine((d) => d.impactTimeHours > 0 || d.impactCostPen > 0, {
+  .refine((d) => d.impactTime.length > 0 || d.impactCostPen > 0, {
     message: "Ingresa horas de impacto o monto en soles (o ambos).",
-    path: ["impactTimeHours"],
+    path: ["impactTime"],
   });
 
 export async function getLessonFormData(): Promise<{
@@ -122,9 +122,7 @@ export async function createLessonAction(
     lessonLearned: String(formData.get("lessonLearned") ?? ""),
     actionPlan: String(formData.get("actionPlan") ?? ""),
     eventDate: String(formData.get("eventDate") ?? ""),
-    impactTimeHours: parseFormDecimal(
-      String(formData.get("impactTimeHours") ?? ""),
-    ),
+    impactTime: String(formData.get("impactTime") ?? "").trim(),
     impactCostPen: parseFormDecimal(String(formData.get("impactCostPen") ?? "")),
   };
 
@@ -161,7 +159,7 @@ export async function createLessonAction(
     actionPlan: parsed.data.actionPlan,
     solution: parsed.data.lessonLearned,
     eventDate: parsed.data.eventDate,
-    impactTimeHours: parsed.data.impactTimeHours,
+    impactTime: parsed.data.impactTime.length ? parsed.data.impactTime : null,
     impactCostPen: parsed.data.impactCostPen,
     createdBy: user.id,
   });

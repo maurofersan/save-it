@@ -234,9 +234,9 @@ export function LessonCreateForm({
                   ¿Cuál fue el impacto?
                 </span>
                 <LessonImpactInputs />
-                {fieldErrors?.impactTimeHours ? (
+                {fieldErrors?.impactTime ? (
                   <p className="mt-1 text-xs text-red-300">
-                    {fieldErrors.impactTimeHours}
+                    {fieldErrors.impactTime}
                   </p>
                 ) : null}
               </div>
