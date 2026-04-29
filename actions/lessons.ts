@@ -13,6 +13,7 @@ import {
   listLessonsForValidation,
   searchValidatedLessons,
   setLessonStatus,
+  updateLessonFromEngineer,
   upsertLessonRating,
 } from "@/services/lessonService";
 import { getOrganizationById } from "@/services/organizationService";
@@ -67,6 +68,10 @@ const createLessonSchema = z
     message: "Ingresa horas de impacto o monto en soles (o ambos).",
     path: ["impactTime"],
   });
+
+const updateLessonSchema = createLessonSchema.extend({
+  lessonId: z.string().trim().min(1, "Lección requerida"),
+});
 
 export async function getLessonFormData(): Promise<{
   specialties: Specialty[];
@@ -198,6 +203,94 @@ export async function createLessonAction(
   revalidatePath("/validate");
   revalidatePath("/library");
   return { ok: true, data: { lessonId: lesson.id } };
+}
+
+export async function updateLessonAction(
+  _prevState: unknown,
+  formData: FormData,
+): Promise<ActionResult<{ lessonId: string }>> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: { message: "No autenticado" } };
+  if (!user.organizationId) {
+    return { ok: false, error: { message: "Usuario sin empresa asignada" } };
+  }
+  if (user.role !== "ENGINEER") {
+    return { ok: false, error: { message: "Solo ingenieros pueden actualizar lecciones" } };
+  }
+
+  const projectStages = formData
+    .getAll("projectStages")
+    .map(String)
+    .filter((s): s is ProjectStageKey =>
+      (STAGE_KEYS as readonly string[]).includes(s),
+    );
+
+  const raw = {
+    lessonId: String(formData.get("lessonId") ?? ""),
+    projectName: String(formData.get("projectName") ?? ""),
+    projectType: String(formData.get("projectType") ?? ""),
+    area: String(formData.get("area") ?? ""),
+    cargo: String(formData.get("cargo") ?? ""),
+    title: String(formData.get("title") ?? ""),
+    specialtyKey: String(formData.get("specialtyKey") ?? ""),
+    projectStages,
+    description: String(formData.get("description") ?? ""),
+    rootCause: String(formData.get("rootCause") ?? ""),
+    actionsTaken: String(formData.get("actionsTaken") ?? ""),
+    lessonLearned: String(formData.get("lessonLearned") ?? ""),
+    actionPlan: String(formData.get("actionPlan") ?? ""),
+    eventDate: String(formData.get("eventDate") ?? ""),
+    impactTime: String(formData.get("impactTime") ?? "").trim(),
+    impactCostPen: parseFormDecimal(String(formData.get("impactCostPen") ?? "")),
+  };
+
+  const parsed = updateLessonSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: {
+        message: "Datos inválidos",
+        fieldErrors: flattenZod(parsed.error),
+      },
+    };
+  }
+
+  const specialties = await listSpecialties();
+  const specialty = specialties.find((s) => s.key === parsed.data.specialtyKey);
+  if (!specialty) {
+    return { ok: false, error: { message: "Área inválida" } };
+  }
+
+  try {
+    const updated = await updateLessonFromEngineer({
+      lessonId: parsed.data.lessonId,
+      organizationId: user.organizationId,
+      createdBy: user.id,
+      title: parsed.data.title,
+      specialtyId: specialty.id,
+      projectName: parsed.data.projectName,
+      projectType: parsed.data.projectType,
+      area: parsed.data.area,
+      cargo: parsed.data.cargo,
+      projectStages: parsed.data.projectStages,
+      description: parsed.data.description,
+      rootCause: parsed.data.rootCause,
+      actionsTaken: parsed.data.actionsTaken,
+      lessonLearned: parsed.data.lessonLearned,
+      actionPlan: parsed.data.actionPlan,
+      solution: parsed.data.lessonLearned,
+      eventDate: parsed.data.eventDate,
+      impactTime: parsed.data.impactTime.length ? parsed.data.impactTime : null,
+      impactCostPen: parsed.data.impactCostPen,
+    });
+    await notifyLessonUpdatedEvent(updated, user.id);
+  } catch {
+    return { ok: false, error: { message: "No se pudo actualizar la lección" } };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/validate");
+  return { ok: true, data: { lessonId: parsed.data.lessonId } };
 }
 
 export async function setLessonStatusAction(

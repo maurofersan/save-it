@@ -15,5 +15,8 @@ export function resolveLessonNotificationHref(
   if (role === "RESIDENT") {
     return "/validate";
   }
+  if (lessonStatus === "IN_PROGRESS") {
+    return `/lessons/${lessonId}/edit`;
+  }
   return "/dashboard";
 }

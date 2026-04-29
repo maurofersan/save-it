@@ -218,6 +218,69 @@ export async function getLessonByIdInOrganization(
   return doc ? mapLesson(doc) : null;
 }
 
+export async function updateLessonFromEngineer(input: {
+  lessonId: string;
+  organizationId: string;
+  createdBy?: string;
+  title: string;
+  specialtyId: string;
+  projectName: string;
+  projectType: string;
+  area: string;
+  cargo: string;
+  projectStages: ProjectStageKey[];
+  description: string;
+  rootCause: string;
+  actionsTaken: string;
+  lessonLearned: string;
+  actionPlan: string;
+  solution: string;
+  eventDate: string | null;
+  impactTime: string | null;
+  impactCostPen: number;
+}): Promise<Lesson> {
+  const db = await getMongoDb();
+  const now = new Date().toISOString();
+  const r = await db.collection<LessonDoc>(LESSONS).updateOne(
+    {
+      _id: new ObjectId(input.lessonId),
+      organizationId: new ObjectId(input.organizationId),
+      status: "IN_PROGRESS",
+      ...(input.createdBy ? { createdBy: new ObjectId(input.createdBy) } : {}),
+    },
+    {
+      $set: {
+        title: input.title,
+        specialtyId: new ObjectId(input.specialtyId),
+        projectName: input.projectName,
+        projectType: input.projectType,
+        area: input.area,
+        cargo: input.cargo,
+        projectStages: input.projectStages,
+        description: input.description,
+        rootCause: input.rootCause,
+        actionsTaken: input.actionsTaken,
+        lessonLearned: input.lessonLearned,
+        actionPlan: input.actionPlan,
+        solution: input.solution,
+        eventDate: input.eventDate,
+        impactTime: input.impactTime,
+        impactCostPen: input.impactCostPen,
+        status: "RECEIVED",
+        reviewerComment: null,
+        validatedAt: null,
+        updatedAt: now,
+      },
+    },
+  );
+  if (r.matchedCount === 0) {
+    throw new Error("Lesson not found or not editable");
+  }
+  const lesson = await getLessonById(input.lessonId);
+  if (!lesson) throw new Error("Lesson not found after update");
+  return lesson;
+}
+
 export async function getValidatedLessonWithSpecialtyById(
   id: string,
   organizationId: string,

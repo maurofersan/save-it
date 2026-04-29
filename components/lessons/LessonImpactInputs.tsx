@@ -4,8 +4,15 @@ import { useState } from "react";
 import { NumericFormat } from "react-number-format";
 import { Input, formInputClassName } from "@/components/ui/Input";
 
-export function LessonImpactInputs() {
-  const [cost, setCost] = useState("");
+export function LessonImpactInputs(props?: {
+  initialTime?: string | null;
+  initialCostPen?: number | null;
+}) {
+  const initialCost =
+    typeof props?.initialCostPen === "number" && Number.isFinite(props.initialCostPen) && props.initialCostPen > 0
+      ? String(props.initialCostPen)
+      : "";
+  const [cost, setCost] = useState(initialCost);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Impacto">
@@ -14,6 +21,7 @@ export function LessonImpactInputs() {
         label="Tiempo"
         placeholder=""
         autoComplete="off"
+        defaultValue={props?.initialTime ?? undefined}
       />
       <label className="flex flex-col gap-1.5">
         <span className="text-sm text-slate-200">Costo</span>
