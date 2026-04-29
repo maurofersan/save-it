@@ -75,7 +75,9 @@ export default async function LibraryDetailPage({
                 {lesson.projectType ? (
                   <Section title="Tipo de proyecto">{lesson.projectType}</Section>
                 ) : null}
-                {lesson.area ? <Section title="Área">{lesson.area}</Section> : null}
+                {lesson.area ? (
+                  <Section title="Especialidad">{lesson.area}</Section>
+                ) : null}
               </div>
             )}
             {lesson.cargo ? (

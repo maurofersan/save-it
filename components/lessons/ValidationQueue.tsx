@@ -120,7 +120,7 @@ export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] })
               <thead className="text-xs text-slate-400">
                 <tr>
                   <th className="py-2 pr-3">Nombre de la lección</th>
-                  <th className="py-2 pr-3">Área</th>
+                  <th className="py-2 pr-3">Especialidad</th>
                   <th className="py-2 pr-3">Fecha de registro</th>
                   <th className="py-2 pr-3">Email</th>
                   <th className="py-2">Estado</th>
@@ -203,13 +203,13 @@ export function ValidationQueue({ lessons }: { lessons: LessonWithSpecialty[] })
           <div className="grid gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="text-xs text-slate-400">
-                {selected.specialtyName} · {selected.createdByName} ({selected.createdByEmail})
+                Área: {selected.specialtyName} · {selected.createdByName} ({selected.createdByEmail})
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <div className="text-xs text-slate-400">Área</div>
+                <div className="text-xs text-slate-400">Especialidad</div>
                 <div className="mt-1 text-sm text-slate-100">{selected.area ?? "—"}</div>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 p-3">

@@ -100,7 +100,7 @@ export function LessonFiltersBar({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-slate-100">Especialidad</span>
+          <span className="text-sm font-medium text-slate-100">Área</span>
           <select
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}

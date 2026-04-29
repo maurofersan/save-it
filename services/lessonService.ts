@@ -1,6 +1,5 @@
 import { ObjectId } from "mongodb";
 import { getMongoDb } from "@/lib/mongo";
-import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import type { LessonStatus, ProjectStageKey } from "@/types/domain";
 import type { Lesson, LessonWithSpecialty } from "@/types/models";
 
@@ -237,6 +236,7 @@ export async function getValidatedLessonWithSpecialtyById(
     .aggregate<
       LessonDoc & {
         specialty_key: LessonWithSpecialty["specialtyKey"];
+        specialty_name: string;
         created_by_name: string;
         created_by_email: string;
       }
@@ -266,6 +266,7 @@ export async function getValidatedLessonWithSpecialtyById(
         $project: {
           ...LESSON_FULL_PROJECTION,
           specialty_key: "$s.key",
+          specialty_name: "$s.name",
           created_by_name: "$u.name",
           created_by_email: "$u.email",
         },
@@ -276,12 +277,12 @@ export async function getValidatedLessonWithSpecialtyById(
 
   const row = rows[0];
   if (!row) return null;
-  const { specialty_key, created_by_name, created_by_email, ...lessonFields } = row;
+  const { specialty_key, specialty_name, created_by_name, created_by_email, ...lessonFields } = row;
   const base = mapLesson(lessonFields as LessonDoc);
   return {
     ...base,
     specialtyKey: specialty_key,
-    specialtyName: getSpecialtyLabel(specialty_key),
+    specialtyName: specialty_name,
     createdByName: created_by_name,
     createdByEmail: created_by_email,
   };
@@ -463,6 +464,7 @@ export async function listLessonsForValidation(filters: {
     $project: {
       ...LESSON_FULL_PROJECTION,
       specialty_key: "$s.key",
+      specialty_name: "$s.name",
       created_by_name: "$u.name",
       created_by_email: "$u.email",
     },
@@ -473,6 +475,7 @@ export async function listLessonsForValidation(filters: {
     .aggregate<
       LessonDoc & {
         specialty_key: LessonWithSpecialty["specialtyKey"];
+        specialty_name: string;
         created_by_name: string;
         created_by_email: string;
       }
@@ -480,11 +483,11 @@ export async function listLessonsForValidation(filters: {
     .toArray();
 
   return rows.map((row) => {
-    const { specialty_key, created_by_name, created_by_email, ...rest } = row;
+    const { specialty_key, specialty_name, created_by_name, created_by_email, ...rest } = row;
     return {
       ...mapLesson(rest as LessonDoc),
       specialtyKey: specialty_key,
-      specialtyName: getSpecialtyLabel(specialty_key),
+      specialtyName: specialty_name,
       createdByName: created_by_name,
       createdByEmail: created_by_email,
     };
@@ -564,6 +567,7 @@ export async function searchValidatedLessons(filters: {
     $project: {
       ...LESSON_FULL_PROJECTION,
       specialty_key: "$s.key",
+      specialty_name: "$s.name",
       created_by_name: "$u.name",
       created_by_email: "$u.email",
     },
@@ -574,6 +578,7 @@ export async function searchValidatedLessons(filters: {
     .aggregate<
       LessonDoc & {
         specialty_key: LessonWithSpecialty["specialtyKey"];
+        specialty_name: string;
         created_by_name: string;
         created_by_email: string;
       }
@@ -581,11 +586,11 @@ export async function searchValidatedLessons(filters: {
     .toArray();
 
   return rows.map((row) => {
-    const { specialty_key, created_by_name, created_by_email, ...rest } = row;
+    const { specialty_key, specialty_name, created_by_name, created_by_email, ...rest } = row;
     return {
       ...mapLesson(rest as LessonDoc),
       specialtyKey: specialty_key,
-      specialtyName: getSpecialtyLabel(specialty_key),
+      specialtyName: specialty_name,
       createdByName: created_by_name,
       createdByEmail: created_by_email,
     };

@@ -43,10 +43,10 @@ const createLessonSchema = z
   .object({
     projectName: z.string().trim().min(2, "Proyecto muy corto").max(200),
     projectType: z.string().trim().min(2, "Tipo muy corto").max(200),
-    area: z.string().trim().min(2, "Área muy corta").max(200),
+    area: z.string().trim().min(2, "Especialidad muy corta").max(200),
     cargo: z.string().trim().min(2, "Cargo muy corto").max(120),
     title: z.string().trim().min(5, "Nombre muy corto").max(140),
-    specialtyKey: z.enum(["QUALITY", "SAFETY", "PRODUCTION"]),
+    specialtyKey: z.string().trim().min(1, "Área requerida").max(80),
     projectStages: z
       .array(z.enum(STAGE_KEYS))
       .min(1, "Selecciona al menos una etapa del proyecto"),
@@ -140,7 +140,7 @@ export async function createLessonAction(
   const specialties = await listSpecialties();
   const specialty = specialties.find((s) => s.key === parsed.data.specialtyKey);
   if (!specialty) {
-    return { ok: false, error: { message: "Especialidad inválida" } };
+    return { ok: false, error: { message: "Área inválida" } };
   }
 
   const lesson = await createLesson({

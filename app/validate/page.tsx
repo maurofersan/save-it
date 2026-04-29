@@ -39,9 +39,8 @@ export default async function ValidatePage({
       ? (sp.status as LessonStatus)
       : undefined;
   const specialtyKey: SpecialtyKey | undefined =
-    sp.specialty === "QUALITY" ||
-    sp.specialty === "SAFETY" ||
-    sp.specialty === "PRODUCTION"
+    typeof sp.specialty === "string" &&
+    specialties.some((s) => s.key === sp.specialty)
       ? (sp.specialty as SpecialtyKey)
       : undefined;
   const ratingMin =

@@ -138,7 +138,7 @@ export function LessonCreateForm({
             />
             <Select
               name="specialtyKey"
-              label="Especialidad"
+              label="Área"
               defaultValue={specialties[0]?.key ?? "QUALITY"}
               error={fieldErrors?.specialtyKey}
             >
@@ -150,8 +150,8 @@ export function LessonCreateForm({
             </Select>
             <Input
               name="area"
-              label="Área"
-              placeholder="Ej. Obra, oficina técnica"
+              label="Especialidad"
+              placeholder="Ingresa la especialidad (ej. Obra, planta, taller)"
               error={fieldErrors?.area}
               required
             />

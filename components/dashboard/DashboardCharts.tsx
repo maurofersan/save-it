@@ -29,7 +29,11 @@ export function DashboardCharts({
   specialtyBars,
   statusCounts,
 }: {
-  specialtyBars: Array<{ specialtyKey: SpecialtyKey; label: string; count: number }>;
+  specialtyBars: Array<{
+    specialtyKey: SpecialtyKey;
+    label: string;
+    count: number;
+  }>;
   statusCounts: Record<LessonStatus, number>;
 }) {
   const barData = specialtyBars.map((s) => ({
@@ -48,12 +52,19 @@ export function DashboardCharts({
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="c-card rounded-2xl border border-white/10 p-4 sm:p-5">
         <h2 className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm">
-          Lecciones aprendidas registradas por especialidad
+          Lecciones aprendidas registradas por área
         </h2>
         <div className="mt-4 h-[280px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData} margin={{ top: 8, right: 8, left: 0, bottom: 40 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" vertical={false} />
+            <BarChart
+              data={barData}
+              margin={{ top: 8, right: 8, left: 0, bottom: 40 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(15,23,42,0.08)"
+                vertical={false}
+              />
               <XAxis
                 dataKey="nombre"
                 tick={{ fill: "#475569", fontSize: 11 }}
@@ -62,7 +73,11 @@ export function DashboardCharts({
                 textAnchor="end"
                 height={48}
               />
-              <YAxis allowDecimals={false} tick={{ fill: "#64748b", fontSize: 11 }} width={36} />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                width={36}
+              />
               <Tooltip
                 contentStyle={{
                   borderRadius: 12,
@@ -73,7 +88,11 @@ export function DashboardCharts({
               />
               <Bar dataKey="cantidad" radius={[6, 6, 0, 0]} name="Lecciones">
                 {barData.map((_, i) => (
-                  <Cell key={i} fill={BAR_COLOR} fillOpacity={0.85 - (i % 3) * 0.08} />
+                  <Cell
+                    key={i}
+                    fill={BAR_COLOR}
+                    fillOpacity={0.85 - (i % 3) * 0.08}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -83,7 +102,7 @@ export function DashboardCharts({
 
       <div className="c-card rounded-2xl border border-white/10 p-4 sm:p-5">
         <h2 className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm">
-          Estado de tus lecciones aprendidas
+          Estado de lecciones aprendidas registradas
         </h2>
         <div className="mt-4 h-[280px] w-full min-w-0">
           {pieData.length === 0 ? (

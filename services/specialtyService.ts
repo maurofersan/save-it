@@ -1,6 +1,5 @@
 import { ObjectId } from "mongodb";
 import { getMongoDb } from "@/lib/mongo";
-import { getSpecialtyLabel } from "@/lib/specialtyLabels";
 import type { Specialty } from "@/types/models";
 
 const COL = "specialties";
@@ -21,7 +20,7 @@ export async function listSpecialties(): Promise<Specialty[]> {
   return rows.map((r) => ({
     id: r._id.toHexString(),
     key: r.key,
-    name: getSpecialtyLabel(r.key),
+    name: r.name,
   }));
 }
 
@@ -29,6 +28,6 @@ export async function getSpecialtyByKey(key: Specialty["key"]): Promise<Specialt
   const db = await getMongoDb();
   const row = await db.collection<SpecialtyDoc>(COL).findOne({ key });
   return row
-    ? { id: row._id.toHexString(), key: row.key, name: getSpecialtyLabel(row.key) }
+    ? { id: row._id.toHexString(), key: row.key, name: row.name }
     : null;
 }

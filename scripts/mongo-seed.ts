@@ -24,6 +24,8 @@ async function run() {
       ["QUALITY", "Calidad"],
       ["SAFETY", "Seguridad"],
       ["PRODUCTION", "Producción"],
+      ["OFFICE_TECHNICAL", "Oficina técnica"],
+      ["MANAGEMENT", "Administración y logística"],
     ] as const) {
       await specialties.updateOne(
         { key },
@@ -31,7 +33,9 @@ async function run() {
         { upsert: true },
       );
     }
-    console.log("Specialties OK (QUALITY / SAFETY / PRODUCTION).");
+    console.log(
+      "Specialties OK (QUALITY / SAFETY / PRODUCTION / OFFICE_TECHNICAL / ADMINISTRATION / LOGISTICS).",
+    );
 
     const orgs = db.collection("organizations");
     const orgSlug = "saveit-demo";
@@ -78,7 +82,9 @@ async function run() {
           { email },
           { $set: { organizationId: org._id, updatedAt: now } },
         );
-        console.log("Usuario demo existía sin empresa; asignada a SAVE IT Demo.");
+        console.log(
+          "Usuario demo existía sin empresa; asignada a SAVE IT Demo.",
+        );
       } else {
         console.log("Usuario residente ya existe, no se modifica.");
       }

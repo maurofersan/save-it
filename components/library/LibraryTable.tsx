@@ -86,7 +86,7 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
                 <td className="py-3 pl-4 pr-3 font-medium text-slate-100">
                   <div className="max-w-[420px] truncate">{l.title}</div>
                   <div className="mt-0.5 text-xs text-slate-400">
-                    {l.specialtyName} · {l.area ?? "—"}
+                    Área: {l.specialtyName} · Especialidad: {l.area ?? "—"}
                   </div>
                 </td>
                 <td className="py-3 pr-3 text-slate-300">
@@ -136,13 +136,14 @@ export function LibraryTable({ lessons }: { lessons: LessonWithSpecialty[] }) {
         {selected ? (
           <div className="grid gap-4">
             <div className="text-xs text-slate-400">
-              {selected.specialtyName} · {selected.createdByName} ({selected.createdByEmail})
+              Área: {selected.specialtyName} · {selected.createdByName} ({selected.createdByEmail})
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Info title="Tipo de proyecto">{selected.projectType ?? "—"}</Info>
               <Info title="Proyecto / obra">{selected.projectName ?? "—"}</Info>
-              <Info title="Área">{selected.area ?? "—"}</Info>
+              <Info title="Área">{selected.specialtyName}</Info>
+              <Info title="Especialidad">{selected.area ?? "—"}</Info>
               <Info title="Fecha de registro">
                 {new Date(selected.createdAt).toLocaleString("es-PE")}
               </Info>

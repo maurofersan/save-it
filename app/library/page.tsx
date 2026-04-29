@@ -30,9 +30,8 @@ export default async function LibraryPage({
   const sp = await searchParams;
   const specialties = await listSpecialties();
   const specialtyKey: SpecialtyKey | undefined =
-    sp.specialty === "QUALITY" ||
-    sp.specialty === "SAFETY" ||
-    sp.specialty === "PRODUCTION"
+    typeof sp.specialty === "string" &&
+    specialties.some((s) => s.key === sp.specialty)
       ? (sp.specialty as SpecialtyKey)
       : undefined;
   const ratingMin =

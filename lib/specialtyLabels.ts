@@ -8,10 +8,9 @@ export function getSpecialtyLabel(key: SpecialtyKey): string {
       return "Seguridad";
     case "PRODUCTION":
       return "Producción";
-    default: {
-      const _exhaustive: never = key;
-      return _exhaustive;
-    }
+    default:
+      // Fallback para catálogos configurables en Mongo.
+      return String(key);
   }
 }
 
